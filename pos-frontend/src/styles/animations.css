@@ -1,0 +1,16 @@
+/* Performance optimizations for animations */
+.force-hardware-acceleration {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Reduce opacity changes to minimize flash */
+.reduced-flash {
+  transition: opacity 0.1s linear;
+}
+
+/* Add will-change for elements that animate frequently */
+.optimize-animation {
+  will-change: opacity, transform;
+}

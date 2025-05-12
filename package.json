@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "mongoose": "^8.12.1",
+    "react-redux": "^9.2.0",
+    "redux": "^5.0.1"
+  }
+}

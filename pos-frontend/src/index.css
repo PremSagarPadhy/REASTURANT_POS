@@ -1,0 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+/* Add to your imports */
+@import './styles/animations.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* FullScreenLoader.css */
+
+.fullscreen-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #1f1f1f; /* White background with some transparency */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Ensure it's on top of other content */
+}
+
+.spinner {
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #f6b100; /* Blue color for spinner */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.custom-scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* Hides the scrollbar in WebKit browsers (Chrome, Safari, etc.) */
+}
+
+.custom-scrollbar-hidden {
+  -ms-overflow-style: none; /* Hides the scrollbar in Internet Explorer */
+  scrollbar-width: none; /* Hides the scrollbar in Firefox */
+}
+.custom-tooltip {
+  color: white;
+  font-size: 12px;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  text-shadow: 0px 0px 2px rgba(0,0,0,0.8);
+}
+.chart-tooltip {
+  background: rgba(42, 42, 42, 1) !important;
+  border-radius: 6px !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  color: white !important;
+  font-size: 12px !important;
+  min-width: 140px !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Fix for animations during fullscreen */
+:fullscreen .motion-div,
+:-webkit-full-screen .motion-div,
+:-moz-full-screen .motion-div,
+:-ms-fullscreen .motion-div {
+  animation: none !important;
+  transition: none !important;
+  opacity: 1 !important;
+}
+
+/* Prevent flashing during page transitions */
+.page-transition {
+  will-change: opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Override framer-motion's default transition effects */
+.framer-motion-override {
+  transition: none !important;
+}
+
+/* Force immediate rendering at full opacity */
+.instant-render {
+  opacity: 1 !important;
+  animation: none !important;
+  transition: none !important;
+}

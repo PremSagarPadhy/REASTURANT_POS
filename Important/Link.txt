@@ -1,0 +1,4 @@
+https://dashboard.razorpay.com/app/dashboard
+ngrok http 8000
+Webhook-/api/payment/webhook-verification
+WeebhookSecret-123456789

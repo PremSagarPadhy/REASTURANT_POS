@@ -1,0 +1,20 @@
+.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Add this meta tag for smoother transitions -->
+    <meta name="theme-color" content="#1f1f1f">
+    <title>Restro-Maniac</title>
+    <!-- This script helps with smoother transitions -->
+    <script>
+      document.documentElement.className = 'force-hardware-acceleration';
+    </script>
+  </head>
+  <body>
+    <div id="root" class="optimize-animation"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
