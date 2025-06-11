@@ -1,0 +1,540 @@
+--ASSIGNMENT 1
+
+create table instructor
+(id number(5),
+name varchar(30),
+dept_name varchar(20),
+salary number(6));
+
+create table course
+(course_id varchar(10),
+title varchar(30),
+dept_name varchar(20),
+credits number(2));
+
+create table prereq
+(course_id varchar(10),
+prereq_id varchar(10));
+
+create table department
+(dept_name varchar(20),
+building varchar(20),
+budget number(10));
+
+create table teaches
+(id number(5),
+course_id varchar(10),
+sec_id number(2),
+semester varchar(10),
+year number(4));
+
+
+insert all
+into instructor values(10101, 'Srinivasan', 'Comp. Sci.', 65000)
+into instructor values(12121, 'Wu', 'Finance', 90000)
+into instructor values(12121, 'Mozart', 'Music', 40000)
+into instructor values(22222, 'Einstein', 'Physics', 95000)
+into instructor values(32343, 'El Said', 'History', 60000)
+into instructor values(33456, 'Gold', 'Physics', 87000)
+into instructor values(45565, 'Katz', 'Comp. Sci.', 75000)
+into instructor values(58583, 'Califieri', 'History', 62000)
+into instructor values(76543, 'Singh', 'Finance', 80000)
+into instructor values(76766, 'Crick', 'Biology', 72000)
+into instructor values(83821, 'Brandt', 'Comp. Sci.', 92000)
+into instructor values(98345, 'Kim', 'Elec. Eng.', 80000)
+select 1 from dual;
+
+
+insert all
+into course values('BIO-101', 'Intro. to Biology', 'Biology', 4)
+into course values('BIO-301', 'Genetics', 'Biology', 4)
+into course values('BIO-399', 'Computational Biology', 'Biology', 3)
+into course values('CS-101', 'Intro. to Computer Science', 'Comp. Sci.', 4)
+into course values('CS-190', 'Game Design', 'Comp. Sci.', 4)
+into course values('CS-315', 'Robotics', 'Comp. Sci.', 3)
+into course values('CS-319', 'Image Processing', 'Comp. Sci.', 3)
+into course values('CS-347', 'Database System Concepts', 'Comp. Sci.', 3)
+into course values('EE-181', 'Intro. to Digital Systems', 'Elec. Eng.', 3)
+into course values('FIN-201', 'Investment Banking', 'Finance', 3)
+into course values('HIS-351', 'World History', 'History', 3)
+into course values('MU-199', 'Music Video Production', 'Music', 3)
+into course values('PHY-101', 'Physical Principles', 'Physics', 4)
+select 1 from dual;
+
+
+insert all
+into prereq values('bio301', 'bio101')
+into prereq values('bio399', 'bio101')
+into prereq values('cs190', 'cs101')
+into prereq values('cs319', 'cs101')
+into prereq values('cs347', 'cs101')
+into prereq values('ee181', 'phy101')
+select 1 from dual;
+
+
+insert all
+into department values('biology', 'watson', 90000)
+into department values('comp sc', 'taylor', 100000)
+into department values('elec engg', 'taylor', 85000)
+into department values('finance', 'painter', 120000)
+into department values('history', 'painter', 50000)
+into department values('music', 'packard', 80000)
+into department values('physics', 'watson', 70000)
+select 1 from dual;
+
+
+insert all
+into Teaches values(10101,'CS-101',1,'Fall',2009)
+into Teaches values(10101,'CS-315',1,'Spring',2010)
+into Teaches values(10101,'CS-347',1,'Fall',2009)
+into Teaches values(12121,'FIN-201',1,'Spring',2010)
+into Teaches values(15151,'Mu-199',1,'Spring',2010)
+into Teaches values(22222,'PHY-101',1,'Fall',2009)
+into Teaches values(32343,'HIS-351',1,'Fall',2010)
+into Teaches values(45565,'CS-319',1,'Spring',2010)
+into Teaches values(76766,'BIO-101',1,'Summer',2009)
+into Teaches values(76766,'BIO-301',1,'Summer',2010)
+into Teaches values(83821,'CS-190',1,'Spring',2009)
+into Teaches values(83821,'CS-190',2,'Spring',2009)
+into Teaches values(83821,'CS-319',2,'Spring',2010)
+into Teaches values(98345,'EE-181',1,'Spring',2009)
+select * from dual;
+
+select * from instructor;
+select * from course;
+select * from prereq;
+select * from department;
+select * from teaches;
+
+
+
+
+
+
+--ASSIGNMENT 2
+--Q1
+desc instructor;
+desc course;
+desc prereq;
+desc department;
+desc teaches;
+
+--Q2
+select * from instructor;
+select * from course;
+select * from prereq;
+select * from department;
+select * from teaches;
+
+--Q3
+select name, dept_name from instructor;
+
+--Q4
+select name, salary from instructor
+where dept_name = 'Comp. Sci.';
+
+--Q5
+select * from instructor
+where dept_name = 'Physics' and salary < 90000;
+
+--Q6
+select name from instructor
+where dept_name != 'Comp. Sci.';
+
+--Q7
+select distinct(dept_name) from instructor;
+
+--Q8
+select course_id from teaches
+where semester = 'Spring' and year = 2009;
+
+--Q9
+select title from course
+where dept_name = 'Comp. Sci.' and credits != 3;
+
+--Q10
+select * from course
+order by dept_name desc;
+
+--Q11
+alter table instructor
+add (date_of_join date);
+
+--Q12
+update instructor
+set date_of_join = to_date('2024-03-05', 'YYYY-MM-DD');
+
+--Q13
+alter table instructor
+rename column dept_name to department;
+
+alter table course
+rename column dept_name to department;
+
+alter table department
+rename column dept_name to department;
+
+--Q14
+alter table prereq
+rename to prerequired;
+
+--Q15
+alter table prerequired
+rename column course_id to sub_code;
+
+alter table teaches
+rename column course_id to sub_code;
+
+--Q16
+alter table instructor
+modify name varchar(50);
+
+--Q17
+alter table instructor
+rename to faculty_info;
+
+--Q18
+alter table course
+modify course_id varchar(8);
+
+--Q19
+drop table prerequired;
+
+--Q20
+alter table department
+rename column building to builder;
+
+
+
+
+
+
+--ASSIGNMENT 3
+--Q1
+--a) 
+SELECT Course_id, Title, Credits 
+FROM Course 
+WHERE Dept_name IN ('Physics', 'Music', 'Finance', 'Biology');
+
+--b) 
+SELECT * 
+FROM Instructor 
+WHERE Name LIKE 'K%' AND Salary > 65000;
+
+--c)
+SELECT Name, Dept_name, 
+Salary + (Salary * 0.05) + (Salary * 0.20) AS Gross_Salary, 
+(Salary + (Salary * 0.05) + (Salary * 0.20)) - (Salary * 0.30) AS Net_Salary
+FROM Instructor;
+
+--d) 
+SELECT * 
+FROM Instructor 
+WHERE Salary BETWEEN 60000 AND 80000;
+
+--e) 
+SELECT * 
+FROM Instructor 
+WHERE Name LIKE '_r%';
+
+--f) 
+SELECT Name 
+FROM Instructor 
+WHERE Dept_name = 'Comp.Sci.' 
+ORDER BY Salary DESC;
+
+--g) 
+UPDATE Instructor 
+SET Salary = Salary * 1.15;
+
+--h) 
+UPDATE Instructor 
+SET Salary = Salary * 1.03 
+WHERE Dept_name = 'Comp.Sci.' AND Salary < 70000;
+
+--i) 
+SELECT Name, Salary * 12 AS Annual_Salary 
+FROM Instructor;
+
+--j) 
+UPDATE Course 
+SET Title = 'Game Theory' 
+WHERE Title = 'Game Design';
+
+--k) 
+DELETE FROM Instructor 
+WHERE Dept_name = 'History';
+
+--l) 
+DELETE FROM Course 
+WHERE Course_id LIKE 'BIO%';
+   
+
+--Q2
+--a) 
+SELECT AVG(Salary) 
+FROM Instructor 
+WHERE Dept_name = 'Physics';
+
+--b) 
+SELECT Dept_name, AVG(Salary) AS Avg_Salary 
+FROM Instructor 
+GROUP BY Dept_name;
+
+--c) 
+SELECT ID, Name, Dept_name 
+FROM Instructor 
+WHERE Salary = (SELECT MAX(Salary) FROM Instructor);
+
+--d)
+SELECT COUNT(*) 
+FROM Instructor 
+WHERE Dept_name = 'Comp.Sci.';
+
+--e) 
+SELECT SUM(Credits) 
+FROM Course 
+WHERE Dept_name = 'Comp.Sci.';
+
+--f) 
+SELECT Dept_name, COUNT(*), SUM(Salary) 
+FROM Instructor 
+WHERE Dept_name IN ('Physics', 'Comp.Sci.') 
+GROUP BY Dept_name;
+
+--g) 
+SELECT Dept_name, SUM(Credits) 
+FROM Course 
+WHERE Dept_name IN ('Comp.Sci.', 'Biology') 
+GROUP BY Dept_name;
+
+--h) 
+SELECT Building, SUM(Budget) 
+FROM Department 
+GROUP BY Building;
+
+--i) 
+SELECT Dept_name, COUNT(*) 
+FROM Instructor 
+GROUP BY Dept_name;
+
+--j) 
+SELECT Dept_name, COUNT(*) 
+FROM Instructor 
+GROUP BY Dept_name 
+ORDER BY COUNT(*) DESC;
+
+--k) 
+SELECT Semester, COUNT(*) 
+FROM Course 
+GROUP BY Semester;
+
+--l) 
+SELECT Dept_name 
+FROM Instructor 
+GROUP BY Dept_name 
+HAVING COUNT(*) < 2;
+
+--m) 
+SELECT Dept_name, COUNT(*) 
+FROM Instructor 
+WHERE Dept_name != 'Finance' 
+GROUP BY Dept_name 
+HAVING COUNT(*) >= 2 
+ORDER BY COUNT(*) DESC;
+
+--n) 
+SELECT Dept_name 
+FROM Instructor 
+GROUP BY Dept_name 
+HAVING SUM(Salary) > 50000;
+
+--o) 
+SELECT SUM(Budget) 
+FROM Department 
+WHERE Building = 'Watson';
+
+--p) 
+SELECT MAX(Salary) 
+FROM Instructor 
+WHERE Dept_name = 'Comp.Sci.';
+    
+    
+--Q3
+--a) 
+SELECT CONCAT(UPPER(LEFT('yourname',1)), LOWER(SUBSTRING('yourname',2))) AS Capitalized_Name;
+
+--b) 
+SELECT SUBSTRING('yourname', 2, 5) AS Extracted_Chars;
+
+--c) 
+SELECT LENGTH('Your University Name') AS Name_Length;
+
+--d) 
+SELECT CONCAT(UPPER(LEFT(Name,1)), LOWER(SUBSTRING(Name,2))) 
+FROM Instructor;
+
+--e) 
+SELECT LEFT(Dept_name,3) AS Dept_Code 
+FROM Instructor;
+
+--f)
+SELECT MONTH(Joining_Date) AS Joining_Month 
+FROM Instructor;
+
+--g) 
+SELECT DATE_FORMAT(Joining_Date, '%d/%m/%y') AS Formatted_Date 
+FROM Instructor;
+
+--h) 
+SELECT TIMESTAMPDIFF(MONTH, Joining_Date, CURDATE()) AS Experience_Months 
+FROM Instructor;
+
+--i) 
+SELECT TIMESTAMPDIFF(YEAR, Joining_Date, CURDATE()) AS Years, 
+TIMESTAMPDIFF(MONTH, Joining_Date, CURDATE()) % 12 AS Months 
+FROM Instructor;
+
+--j) 
+SELECT DAYNAME(Joining_Date) AS Joining_Day 
+FROM Instructor;
+
+--k) 
+SELECT CURDATE() + INTERVAL 15 DAY AS Future_Date;
+
+--l) 
+SELECT TRUNCATE(94204.27348, 2) AS Truncated_Value;
+
+--m) 
+SELECT 5 + 89 AS Sum_Value;
+
+--n) 
+SELECT SQRT(6464312) AS Square_Root;
+
+--o) 
+SELECT LOWER('HELLO ITER') AS Lower_Case_String;
+
+
+
+
+
+
+
+-- Assignment 4
+-- Q1.
+
+create table customer
+(cust_no char(5) primary key check (regexp_like(cust_no, '^C.{4}$')),
+name varchar(100) not null,
+phone_no varchar(15),
+city varchar(50) not null);
+
+create table branch
+(branch_code char(4) primary key,
+branch_name varchar(100) not null,
+branch_city varchar(50) check (branch_city in ('DELHI', 'MUMBAI', 'KOLKATA' , 'CHENNAI')));
+
+create table account
+(account_no char(5) primary key check (regexp_like(account_no, '^A.{4}$')),
+type varchar(2) check (type in ('SB', 'FD', 'CA')),
+balance number check (balance < 10000000),
+branch_code char(4),
+foreign key (branch_code) references branch(branch_code));
+
+create table depositor
+(cust_no char(5),
+account_no char(5),
+primary key (cust_no, account_no),
+foreign key (cust_no) references customer(cust_no),
+foreign key (account_no) references account(account_no));
+
+create table loan 
+(loan_no char(5) primary key check(regexp_like(loan_no, '^L.{4}$')),
+cust_no char(5),
+amount number check (amount > 1000),
+branch_code char(4),
+foreign key (cust_no) references customer(cust_no),
+foreign key (branch_code) references branch(branch_code));
+
+create table installment
+(inst_no number check (inst_no <= 10),
+loan_no char(5),
+inst_amount number not null,
+primary key (inst_no, loan_no),
+foreign key (loan_no) references loan(loan_no));
+
+
+
+-- Q2.
+
+insert all
+into branch values ('B001', 'JANAKPURI BRANCH', 'DELHI')
+into branch values ('B002', 'CHANNDICHOWK BRANCH', 'DELHI')
+into branch values ('B003', 'JUHU BRANCH', 'MUMBAI')
+into branch values ('B004', 'ANDHERI BRANCH', 'MUMBAI')
+into branch values ('B005', 'SALTLAKE BRANCH', 'KOLKATA')
+into branch values ('B006', 'SRIRAMPURAM BRANCH', 'CHENNAI')
+select * from dual;
+
+insert all
+into customer values ('C0001', 'RAJ ANAND SINGH', '9861258466', 'DELHI')
+into customer values ('C0002', 'ANKITA SINGH', '9879958651', 'BANGALORE')
+into customer values ('C0003', 'SOUMYA JHA', '9885623344', 'MUMBAI')
+into customer values ('C0004', 'ABHIJIT MISHRA', '9455845425', 'MUMBAI')
+into customer values ('C0005', 'YASH SARAF', '9665845425', 'KOLKATA')
+into customer values ('C0006', 'SWAROOP RAY', '9437855466', 'CHENNAI')
+into customer values ('C0007', 'SURYA NARAYAN', '9937855466', 'GURGAON')
+into customer values ('C0008', 'PRANAV PRAVEEN', '9336652441', 'PUNE')
+into customer values ('C0009', 'STUTI MISHRA', '7870266534', 'DELHI')
+into customer values ('C0010', 'ASLESHA TIWARI', NULL, 'MUMBAI')
+select * from dual;
+
+insert all
+into account values ('A0001', 'SB', 200000, 'B003')
+into account values ('A0002', 'SB', 15000, 'B002')
+into account values ('A0003', 'CA', 850000, 'B004')
+into account values ('A0004', 'CA', 35000, 'B004')
+into account values ('A0005', 'FD', 28500, 'B005')
+into account values ('A0006', 'FD', 550000, 'B005')
+into account values ('A0007', 'SB', 48000, 'B001')
+into account values ('A0008', 'SB', 7200, 'B002')
+into account values ('A0009', 'SB', 18750, 'B003')
+into account values ('A0010', 'FD', 99000, 'B004')
+select * from dual;
+
+insert all
+into depositor values ('C0003', 'A0001')
+into depositor values ('C0004', 'A0001')
+into depositor values ('C0004', 'A0002')
+into depositor values ('C0006', 'A0003')
+into depositor values ('C0006', 'A0004')
+into depositor values ('C0001', 'A0005')
+into depositor values ('C0002', 'A0005')
+into depositor values ('C0010', 'A0006')
+into depositor values ('C0009', 'A0007')
+into depositor values ('C0008', 'A0008')
+into depositor values ('C0007', 'A0009')
+into depositor values ('C0006', 'A0010')
+select * from dual;
+
+insert all
+into loan values ('L0001', 'C0005', 3000000, 'B006')
+into loan values ('L0002', 'C0001', 50000, 'B005')
+into loan values ('L0003', 'C0002', 8000000, 'B004')
+into loan values ('L0004', 'C0010', 100000, 'B004')
+into loan values ('L0005', 'C0009', 9500000, 'B005')
+into loan values ('L0006', 'C0008', 25000, 'B006')
+select * from dual;
+
+insert all
+into installment values (1, 'L0005', 500000)
+into installment values (1, 'L0002', 10000)
+into installment values (1, 'L0003', 50000)
+into installment values (1, 'L0004', 20000)
+into installment values (2, 'L0005', 500000)
+into installment values (1, 'L0006', 3000)
+into installment values (2, 'L0002', 100000)
+into installment values (3, 'L0002', 100000)
+into installment values (2, 'L0003', 500000)
+into installment values (2, 'L0004', 200000)
+select * from dual;

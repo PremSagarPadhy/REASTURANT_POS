@@ -8,6 +8,7 @@ import AddCategory from "../components/dashboard/AddCategory";
 import Inventory from "../components/dashboard/Inventory";
 import ManageItems from "../components/dashboard/ManageItems";
 import Invoices from "../components/dashboard/invoices";
+import AdminSupport from "../components/dashboard/AdminSupport"; // Import the AdminSupport component
 
 import { useSidebar } from "../context/SidebarContext";
 
@@ -34,9 +35,9 @@ const Dashboard = () => {
       case "Edit Orders":
         return <RecentOrders />;
       case "Create Orders":
-        return <CreateOrder />; 
+        return <CreateOrder />;
       case "View Table":
-        return <ViewTable/>;
+        return <ViewTable />;
       case "Create Tables":
         return <CreateTable />;
       case "Payments":
@@ -49,6 +50,8 @@ const Dashboard = () => {
         return <Invoices />;
       case "Inventory":
         return <Inventory />;
+      case "Admin Support":
+        return <AdminSupport />;
       default:
         return <Analytics />;
     }
@@ -56,7 +59,7 @@ const Dashboard = () => {
 
   return (
     <div className="flex">
-      <div 
+      <div
         className={`bg-[#1a1a1a] flex-1 h-[calc(100vh-5rem)] overflow-hidden transition-[margin] duration-500 ease-in-out ${
           isSidebarOpen ? 'ml-56' : 'ml-16'
         }`}

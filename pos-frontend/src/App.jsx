@@ -6,7 +6,7 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { Home, Auth, Orders, Tables, Menu, Dashboard, Analytics} from "./pages";
+import { Home, Auth, Orders, Tables, Menu, Dashboard, Analytics } from "./pages";
 import Payments from "./components/dashboard/Payments";
 import Inventory from "./components/dashboard/Inventory"; // Import the Inventory component
 import Header from "./components/shared/Header";
@@ -17,11 +17,15 @@ import useLoadData from "./hooks/useLoadData";
 import FullScreenLoader from "./components/shared/FullScreenLoader";
 import { SidebarProvider } from "./context/SidebarContext";
 import { NotificationProvider } from "./context/NotificationContext"; // Fixed import path
+import Support from "./pages/Support";
+import AdminSupport from "./components/dashboard/AdminSupport";
 
 function Layout() {
   const isLoading = useLoadData();
   const location = useLocation();
-  const showSidebar = location.pathname.includes("/dashboard") || location.pathname.includes("/inventory"); // Added inventory path
+  const showSidebar = location.pathname.includes("/dashboard") || 
+                      location.pathname.includes("/inventory") || 
+                      location.pathname.includes("/admin-support"); // Add this path
   const hideHeaderRoutes = ["/auth"];
   const { isAuth } = useSelector((state) => state.user);
 
@@ -53,6 +57,8 @@ function Layout() {
           <Route path="/payments/list" element={<ProtectedRoutes><Payments /></ProtectedRoutes>}/>
           {/* Add the route for Inventory */}
           <Route path="/inventory" element={<ProtectedRoutes><Inventory /></ProtectedRoutes>}/>
+          <Route path="/support" element={<Support />} />
+          <Route path="/AdminSupport" element={<ProtectedRoutes><AdminSupport /></ProtectedRoutes>} />
           <Route path="*" element={<div>Not Found</div>} />
         </Routes>
       </div>

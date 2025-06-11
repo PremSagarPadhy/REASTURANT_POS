@@ -93,3 +93,18 @@ body {
   animation: none !important;
   transition: none !important;
 }
+
+/* For the main container */
+.overflow-hidden {
+  overflow: hidden;
+}
+
+/* Add this if you need scrolling content within this container but with hidden scrollbars */
+.overflow-hidden > .overflow-y-auto {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.overflow-hidden > .overflow-y-auto::-webkit-scrollbar {
+  display: none;
+}

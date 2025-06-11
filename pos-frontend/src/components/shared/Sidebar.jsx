@@ -5,7 +5,7 @@ import { TbFileInvoice, TbNotification } from "react-icons/tb";
 import { GrUserWorker } from "react-icons/gr";
 import { AiOutlineProduct } from "react-icons/ai";
 import { BiUser } from "react-icons/bi";
-import { RiCustomerServiceLine } from "react-icons/ri";
+import { RiCustomerServiceLine, RiCustomerService2Fill } from "react-icons/ri"; // Add RiCustomerService2Fill
 import { useSidebar } from "../../context/SidebarContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../../assets/images/logo.png";
@@ -33,7 +33,7 @@ const Sidebar = () => {
     if (item.label === "Analytics" || item.label === "Edit Orders" || item.label === "View Orders"|| item.label === "Create Orders" || item.label === "Payments" 
       || item.label === "View Table" || item.label === "Create Table" || item.label === "Add Category" || item.label === "Edit Category" || item.label === "Manage Items" 
       || item.label === "Invoices" || item.label === "Inventory" || item.label === "Customer" || item.label === "Employee" || item.label === "Feedback" 
-      || item.label === "Support" || item.label === "Notification") {
+      || item.label === "AdminSupport" || item.label === "Notification") {
       // If the item is a dashboard item, set the current view
       // If on dashboard page, just update the view
       if (location.pathname === "/dashboard") {
@@ -111,7 +111,13 @@ const Sidebar = () => {
     { icon: <BiUser size={20} />, label: "Customer", link: "/customer" },
     { icon: <GrUserWorker size={20} />, label: "Employee", link: "/employee" },
     { icon: <MdOutlineFeedback size={20} />, label: "Feedback", link: "/feedback" },
-    { icon: <RiCustomerServiceLine size={20} />, label: "Support", link: "/support" },
+    {
+      icon: <RiCustomerServiceLine size={20} />,
+      label: "Support",
+      submenu: [
+        { label: "Admin Support", action: () => navigate("/AdminSupport") }
+      ]
+    },
     { icon: <TbNotification size={20} />, label: "Notification", link: "/notifications" }
   ];
 
