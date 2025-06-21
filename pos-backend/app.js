@@ -13,7 +13,13 @@ const { Server } = require("socket.io");
 // Initialize Socket.IO with CORS settings
 const io = new Server(server, {
     cors: {
-        origin: ['https://916a-171-48-107-135.ngrok-free.app','http://localhost:5173'],
+        origin: function(origin, callback) {
+            if (!origin) return callback(null, true);
+            if (origin.indexOf('http://localhost') === 0) return callback(null, true);
+            if (origin === 'https://reasturant-pos.vercel.app') return callback(null, true);
+            if (origin.match(/https:\/\/.*vercel\.app$/)) return callback(null, true);
+            callback(new Error('Not allowed by CORS'));
+        },
         methods: ['GET', 'POST'],
         credentials: true,
         allowedHeaders: ['Content-Type', 'Authorization']
