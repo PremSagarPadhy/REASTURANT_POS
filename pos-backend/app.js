@@ -13,7 +13,7 @@ const { Server } = require("socket.io");
 // Initialize Socket.IO with CORS settings
 const io = new Server(server, {
     cors: {
-        origin: ['https://916a-171-48-107-135.ngrok-free.app','http://localhost:5173'],
+        origin: ['https://reasturant-pos.vercel.app','http://localhost:5173'],
         methods: ['GET', 'POST'],
         credentials: true,
         allowedHeaders: ['Content-Type', 'Authorization']
@@ -25,7 +25,7 @@ connectDB();
 // Middlewares
 app.use(cors({
     credentials: true,
-    origin: ['http://localhost:5173', 'https://916a-171-48-107-135.ngrok-free.app']
+    origin: ['http://localhost:5173', 'https://reasturant-pos.vercel.app']
 }))
 app.use(express.json()); // parse incoming request in json format
 app.use(cookieParser())
