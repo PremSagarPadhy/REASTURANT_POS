@@ -59,10 +59,10 @@ npm run dev
 
 ## 📁 Project Structure
 restaurant-pos-system/
-├── pos-frontend/         # React frontend (Vite)
-├── pos-backend/         # Node.js backend (Express)
-├── README.md
-└── node_model
+├── client/         # React frontend (Vite)
+├── server/         # Node.js backend (Express)
+├── README.md       # All the Procedure of This Project
+└── .env            # Environment variable sample
 
 ## 📌 TODO / Improvements
 1. Work on 
