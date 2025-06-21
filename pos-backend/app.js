@@ -30,7 +30,7 @@ app.use(cors({
 app.use(express.json()); // parse incoming request in json format
 app.use(cookieParser())
 
-// Make io available to our routes
+// This Make io available to our routes
 app.set('io', io);
 
 // Socket.IO connection handling
