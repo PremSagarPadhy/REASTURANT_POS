@@ -58,25 +58,7 @@ npm run dev
 ### Visit: http://localhost:5173
 
 ## 📁 Project Structure
-restaurant-pos-system/
-├── client/             # React frontend (Vite + Tailwind CSS)
-│   ├── public/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── assets/
-│   │   └── App.jsx
-│   └── vite.config.js
-│
-├── server/             # Node.js backend (Express)
-│   ├── controllers/
-│   ├── routes/
-│   ├── models/
-│   └── server.js
-│
-├── .env.example        # Environment variable example file
-├── README.md           # Project documentation
-└── package.json        # Root config (optional monorepo style)
+<pre> ```plaintext restaurant-pos-system/ ├── client/ # React frontend (Vite + Tailwind CSS) │ ├── public/ │ ├── src/ │ │ ├── components/ │ │ ├── pages/ │ │ ├── assets/ │ │ └── App.jsx │ └── vite.config.js │ ├── server/ # Node.js backend (Express) │ ├── controllers/ │ ├── routes/ │ ├── models/ │ └── server.js │ ├── .env.example # Environment variable example file ├── README.md # Project documentation └── package.json # Root config (optional monorepo style) ``` </pre>
 
 
 ## 📌 TODO / Improvements
