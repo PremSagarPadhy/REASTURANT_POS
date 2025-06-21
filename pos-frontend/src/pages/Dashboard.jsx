@@ -7,8 +7,8 @@ import ViewTable from "../components/dashboard/ViewTable";
 import AddCategory from "../components/dashboard/AddCategory";
 import Inventory from "../components/dashboard/Inventory";
 import ManageItems from "../components/dashboard/ManageItems";
-import Invoices from "../components/dashboard/invoices";
-import AdminSupport from "../components/dashboard/AdminSupport"; // Import the AdminSupport component
+import Invoices from "../components/dashboard/Invoices";
+import AdminSupport from "../components/dashboard/AdminSupport"; 
 import EmployeeDetails from "../components/dashboard/EmployeeDetails";
 import EmployeeEdit from "../components/dashboard/EmployeeEdit";
 
