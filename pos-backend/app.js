@@ -13,7 +13,13 @@ const { Server } = require("socket.io");
 // Initialize Socket.IO with CORS settings
 const io = new Server(server, {
     cors: {
-        origin: ['https://reasturant-pos.vercel.app','http://localhost:5173'],
+        origin: function(origin, callback) {
+            if (!origin) return callback(null, true);
+            if (origin.indexOf('http://localhost') === 0) return callback(null, true);
+            if (origin === 'https://reasturant-pos.vercel.app') return callback(null, true);
+            if (origin.match(/https:\/\/.*vercel\.app$/)) return callback(null, true);
+            callback(new Error('Not allowed by CORS'));
+        },
         methods: ['GET', 'POST'],
         credentials: true,
         allowedHeaders: ['Content-Type', 'Authorization']
@@ -25,7 +31,25 @@ connectDB();
 // Middlewares
 app.use(cors({
     credentials: true,
-    origin: ['http://localhost:5173', 'https://reasturant-pos.vercel.app']
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Allow localhost
+        if (origin.indexOf('http://localhost') === 0) return callback(null, true);
+        
+        // Allow your main Vercel domain
+        if (origin === 'https://reasturant-pos.vercel.app') return callback(null, true);
+        
+        // Allow any Vercel preview domains
+        if (origin.match(/https:\/\/.*vercel\.app$/)) return callback(null, true);
+        
+        // Otherwise, deny the request
+        callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
 }))
 app.use(express.json()); // parse incoming request in json format
 app.use(cookieParser())
