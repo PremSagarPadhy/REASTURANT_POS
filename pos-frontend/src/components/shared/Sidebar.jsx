@@ -5,11 +5,11 @@ import { TbFileInvoice, TbNotification } from "react-icons/tb";
 import { GrUserWorker } from "react-icons/gr";
 import { AiOutlineProduct } from "react-icons/ai";
 import { BiUser } from "react-icons/bi";
-import { RiCustomerServiceLine, RiCustomerService2Fill } from "react-icons/ri"; // Add RiCustomerService2Fill
+import { RiCustomerServiceLine, RiCustomerService2Fill } from "react-icons/ri";
 import { useSidebar } from "../../context/SidebarContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../../assets/images/logo.png";
-import Modal from "../dashboard/Modal"; // Import Modal component
+import Modal from "../dashboard/Modal";
 
 const Sidebar = () => {
   const { isSidebarOpen, toggleSidebar, currentView, setCurrentView } = useSidebar();
@@ -32,7 +32,7 @@ const Sidebar = () => {
   const handleMenuItemClick = (item) => {
     if (item.label === "Analytics" || item.label === "Edit Orders" || item.label === "View Orders"|| item.label === "Create Orders" || item.label === "Payments" 
       || item.label === "View Table" || item.label === "Create Table" || item.label === "Add Category" || item.label === "Edit Category" || item.label === "Manage Items" 
-      || item.label === "Invoices" || item.label === "Inventory" || item.label === "Customer" || item.label === "Employee" || item.label === "Feedback" 
+      || item.label === "Invoices" || item.label === "Inventory" || item.label === "Customer" || item.label === "Employee Details" ||item.label==="Employee Edit"|| item.label === "Feedback" 
       || item.label === "AdminSupport" || item.label === "Notification") {
       // If the item is a dashboard item, set the current view
       // If on dashboard page, just update the view
@@ -103,14 +103,19 @@ const Sidebar = () => {
       icon: <MdOutlineInventory2 size={20} />,
       label: "Inventory", 
       submenu: [
-        // Change this to use the handleMenuItemClick approach instead of direct navigation
         { label: "Manage Inventory", action: () => handleMenuItemClick({ label: "Inventory" }) },
         { label: "Inventory Report", action: () => handleMenuItemClick({ label: "Inventory Report" }) }
       ],
     },
-    { icon: <BiUser size={20} />, label: "Customer", link: "/customer" },
-    { icon: <GrUserWorker size={20} />, label: "Employee", link: "/employee" },
-    { icon: <MdOutlineFeedback size={20} />, label: "Feedback", link: "/feedback" },
+    { icon: <BiUser size={20} />, label: "Customer", action: () => handleMenuItemClick({ label: "Customer" }) },
+    { icon: <GrUserWorker size={20} />,
+        label: "Employee",
+        submenu: [
+        { label: "Employee Details", action: () => handleMenuItemClick({ label: "Employee Details" }) },
+        { label: "Employee Edit", action: () => handleMenuItemClick({ label: "Employee Edit" }) }
+      ], 
+    },
+    { icon: <MdOutlineFeedback size={20} />, label: "Feedback", action: () => handleMenuItemClick({ label: "Feedback" }) },
     {
       icon: <RiCustomerServiceLine size={20} />,
       label: "Support",
@@ -118,7 +123,7 @@ const Sidebar = () => {
         { label: "Admin Support", action: () => navigate("/AdminSupport") }
       ]
     },
-    { icon: <TbNotification size={20} />, label: "Notification", link: "/notifications" }
+    { icon: <TbNotification size={20} />, label: "Notification", action: () => handleMenuItemClick({ label: "Notification" }) }
   ];
 
   // Function to handle submenu interactions

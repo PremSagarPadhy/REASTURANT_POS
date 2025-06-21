@@ -7,7 +7,7 @@ const Notification = () => {
   const { notifications, dismissNotification } = useNotification();
 
   if (notifications.length === 0) return null;
-
+  
   const getIcon = (type) => {
     switch (type) {
       case 'success':

@@ -9,6 +9,8 @@ import Inventory from "../components/dashboard/Inventory";
 import ManageItems from "../components/dashboard/ManageItems";
 import Invoices from "../components/dashboard/invoices";
 import AdminSupport from "../components/dashboard/AdminSupport"; // Import the AdminSupport component
+import EmployeeDetails from "../components/dashboard/EmployeeDetails";
+import EmployeeEdit from "../components/dashboard/EmployeeEdit";
 
 import { useSidebar } from "../context/SidebarContext";
 
@@ -52,6 +54,10 @@ const Dashboard = () => {
         return <Inventory />;
       case "Admin Support":
         return <AdminSupport />;
+      case "Employee Details":
+        return <EmployeeDetails />;
+      case "Employee Edit":
+        return <EmployeeEdit />;
       default:
         return <Analytics />;
     }

@@ -13,9 +13,10 @@ const { Server } = require("socket.io");
 // Initialize Socket.IO with CORS settings
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:5173',
+        origin: ['https://916a-171-48-107-135.ngrok-free.app','http://localhost:5173'],
         methods: ['GET', 'POST'],
-        credentials: true
+        credentials: true,
+        allowedHeaders: ['Content-Type', 'Authorization']
     }
 });
 
@@ -24,7 +25,7 @@ connectDB();
 // Middlewares
 app.use(cors({
     credentials: true,
-    origin: ['http://localhost:5173']
+    origin: ['http://localhost:5173', 'https://916a-171-48-107-135.ngrok-free.app']
 }))
 app.use(express.json()); // parse incoming request in json format
 app.use(cookieParser())
@@ -48,11 +49,13 @@ app.use("/api/payment", require("./routes/paymentRoute"));
 app.use('/api/category', require('./routes/categoryRoute'));
 app.use('/api/inventory', require('./routes/inventoryRoute'));
 app.use('/api/support', require('./routes/supportRoute'));
+const employeeRoutes = require('./routes/employeeRoutes');
+app.use('/api/employees', employeeRoutes);
   
 // Global Error Handler
 app.use(globalErrorHandler);
 
 // Server
 server.listen(PORT, () => {
-    console.log(`☑️  POS Server is listening on port ${PORT}`);
+    console.log(`☑️  POS Server is running on port ${PORT}`);
 })

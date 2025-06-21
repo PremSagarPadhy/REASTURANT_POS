@@ -202,6 +202,24 @@ module.exports = (io) => {
       }
     });
     
+    // New order event
+    socket.on('new:order', (order) => {
+      io.emit('new:order', {
+        orderId: order.id,
+        source: `Table ${order.tableNumber}`,
+        timestamp: new Date()
+      });
+    });
+
+    // Order status update event
+    socket.on('order:update', (order) => {
+      io.emit('order:update', {
+        orderId: order.id,
+        status: order.status,
+        timestamp: new Date()
+      });
+    });
+    
     // Disconnect event
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.id);

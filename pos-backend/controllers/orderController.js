@@ -1,9 +1,9 @@
 const createHttpError = require("http-errors");
 const Order = require("../models/orderModel");
-const Table = require("../models/tableModel"); // ✅ Import table model
+const Table = require("../models/tableModel");
 const mongoose = require("mongoose");
 
-// ✅ Add a new order
+// Add a new order
 const addOrder = async (req, res, next) => {
   try {
     const order = new Order(req.body);
@@ -20,6 +20,37 @@ const addOrder = async (req, res, next) => {
       console.log(`Table ${order.table} marked as Booked for new order ${order._id}`);
     }
     
+    // Emit socket event for new order notification
+    const io = req.app.get('io');
+    console.log('Socket IO available?', !!io); // Log if io is available
+
+    if (io) {
+      // Create a source string that includes table info if available
+      const source = order.table ? `Table ${order.table}` : "Direct Order";
+      
+      // Add the try-catch block here around the socket emission
+      try {
+        console.log('📣 Emitting new:order event with data:', {
+          orderId: order._id.toString(),
+          source,
+          customerName: order.customerDetails.name
+        });
+        
+        io.emit('new:order', {
+          orderId: order._id.toString(),
+          source: source,
+          customerName: order.customerDetails.name,
+          timestamp: new Date()
+        });
+        
+        console.log("✅ Socket event emitted successfully");
+      } catch (socketError) {
+        console.error("❌ Socket emission error:", socketError);
+      }
+    } else {
+      console.error("❌ Socket.IO instance not available in request");
+    }
+    
     res.status(201).json({ 
       success: true, 
       message: "Order created!", 
@@ -31,27 +62,43 @@ const addOrder = async (req, res, next) => {
   }
 };
 
-// ✅ Get a specific order by ID
+// Get a specific order by ID
 const getOrderById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    // Check if the ID is a valid MongoDB ObjectID
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return next(createHttpError(404, "Invalid id!"));
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order ID format"
+      });
     }
 
-    const order = await Order.findById(id);
+    const order = await Order.findById(id).populate('table');
+    
     if (!order) {
-      return next(createHttpError(404, "Order not found!"));
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
     }
 
-    res.status(200).json({ success: true, data: order });
+    res.status(200).json({ 
+      success: true, 
+      data: order 
+    });
   } catch (error) {
-    next(error);
+    console.error("Error fetching order:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching order",
+      error: error.message
+    });
   }
 };
 
-// ✅ Get all orders (Supports filtering by status & date)
+// Get all orders (Supports filtering by status & date)
 const getOrders = async (req, res, next) => {
   try {
     const orders = await Order.find().populate("table");
@@ -61,7 +108,7 @@ const getOrders = async (req, res, next) => {
   }
 };
 
-// ✅ Update an order (with table release logic if completed)
+// Update an order (with table release logic if completed)
 const updateOrder = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -153,6 +200,18 @@ const updateOrder = async (req, res, next) => {
       console.log("No table associated with this order");
     }
 
+    // Emit socket event for order status update
+    const io = req.app.get('io');
+    if (io && orderStatus) {
+      io.emit('order:update', {
+        orderId: updatedOrder._id.toString(),
+        status: orderStatus,
+        customerName: updatedOrder.customerDetails?.name || "Unknown",
+        timestamp: new Date()
+      });
+      console.log(`Emitted order:update event for order ${updatedOrder._id} with status ${orderStatus}`);
+    }
+
     res.status(200).json({
       success: true,
       message: "Order updated successfully",
@@ -165,7 +224,7 @@ const updateOrder = async (req, res, next) => {
 };
 
 
-// ✅ Delete an order (with table release logic)
+// Delete an order (with table release logic)
 const deleteOrder = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -202,7 +261,7 @@ const deleteOrder = async (req, res, next) => {
   }
 };
 
-// ✅ Get today's In-Progress orders & compare with yesterday
+// Get today's In-Progress orders & compare with yesterday
 const getOrderComparison = async (req, res, next) => {
   try {
     const today = new Date();
@@ -240,7 +299,7 @@ const getOrderComparison = async (req, res, next) => {
   }
 };
 
-// ✅ Popular Dishes (Basic Version)
+// Popular Dishes (Basic Version)
 const getPopularDishes = async (req, res, next) => {
   try {
     const popularDishesData = await Order.aggregate([
@@ -296,7 +355,7 @@ const getPopularDishes = async (req, res, next) => {
   }
 };
 
-// ✅ Export all
+// Export all
 module.exports = {
   addOrder,
   getOrderById,

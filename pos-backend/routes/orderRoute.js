@@ -11,14 +11,20 @@ const {
 
 const { isVerifiedUser } = require("../middlewares/tokenVerification");
 
+// Middleware to ensure Socket.IO is available in routes
+const socketMiddleware = (req, res, next) => {
+  req.io = req.app.get('io');
+  next();
+};
+
 const router = express.Router();
 
 router.get("/popular-dishes", isVerifiedUser, getPopularDishes);
 router.get("/comparison", isVerifiedUser, getOrderComparison);
-router.post("/", isVerifiedUser, addOrder);
+router.post("/", isVerifiedUser, socketMiddleware, addOrder);
 router.get("/", isVerifiedUser, getOrders);
 router.get("/:id", isVerifiedUser, getOrderById);
-router.put("/:id", isVerifiedUser, updateOrder); // ✅ THIS LINE
+router.put("/:id", isVerifiedUser, socketMiddleware, updateOrder);
 router.delete("/:id", isVerifiedUser, deleteOrder);
 
 module.exports = router;
