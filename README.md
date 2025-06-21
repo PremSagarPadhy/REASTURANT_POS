@@ -44,31 +44,31 @@ cd ../client
 npm install
 ```
 
-▶️ Usage
-Start Backend
+## ▶️ Usage
+## Start Backend
 ```bash
 cd server
 npm run dev
 ```
-Start Frontend
+## Start Frontend
 ```bash
 cd client
 npm run dev
 ```
- Visit: http://localhost:5173
+### Visit: http://localhost:5173
 
-📁 Project Structure
+## 📁 Project Structure
 restaurant-pos-system/
 ├── pos-frontend/         # React frontend (Vite)
 ├── pos-backend/         # Node.js backend (Express)
 ├── README.md
 └── node_model
 
-📌 TODO / Improvements
+## 📌 TODO / Improvements
 1. Work on 
 2. Add AI Voice Assistance
 3. Add real-time socket updates for kitchen
 4. Mobile responsive optimizations
 
-📄 License
+## 📄 License
 MIT License © 2025 Prem Sagar Padhy
