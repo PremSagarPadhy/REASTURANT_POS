@@ -5,27 +5,9 @@ const globalErrorHandler = require("./middlewares/globalErrorHandler");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const app = express();
-const PORT = config.port;
-const http = require('http');
-const server = http.createServer(app);
-const { Server } = require("socket.io");
+const PORT = config.port || 3000;
 
-// Initialize Socket.IO with CORS settings
-const io = new Server(server, {
-    cors: {
-        origin: function(origin, callback) {
-            if (!origin) return callback(null, true);
-            if (origin.indexOf('http://localhost') === 0) return callback(null, true);
-            if (origin === 'https://reasturant-pos.vercel.app') return callback(null, true);
-            if (origin.match(/https:\/\/.*vercel\.app$/)) return callback(null, true);
-            callback(new Error('Not allowed by CORS'));
-        },
-        methods: ['GET', 'POST'],
-        credentials: true,
-        allowedHeaders: ['Content-Type', 'Authorization']
-    }
-});
-
+// Initialize database connection
 connectDB();
 
 // Middlewares
@@ -48,22 +30,54 @@ app.use(cors({
         callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
-}))
+}));
 app.use(express.json()); // parse incoming request in json format
-app.use(cookieParser())
+app.use(cookieParser());
 
-// This Make io available to our routes
-app.set('io', io);
-
-// Socket.IO connection handling
-require('./sockets/supportSocket')(io);
+// Socket.IO setup - Only initialize in non-Vercel environment
+if (process.env.VERCEL !== '1') {
+    const http = require('http');
+    const server = http.createServer(app);
+    const { Server } = require("socket.io");
+    
+    const io = new Server(server, {
+        cors: {
+            origin: function(origin, callback) {
+                if (!origin) return callback(null, true);
+                if (origin.indexOf('http://localhost') === 0) return callback(null, true);
+                if (origin === 'https://reasturant-pos.vercel.app') return callback(null, true);
+                if (origin.match(/https:\/\/.*vercel\.app$/)) return callback(null, true);
+                callback(new Error('Not allowed by CORS'));
+            },
+            methods: ['GET', 'POST'],
+            credentials: true,
+            allowedHeaders: ['Content-Type', 'Authorization']
+        }
+    });
+    
+    // This Make io available to our routes
+    app.set('io', io);
+    
+    // Socket.IO connection handling
+    require('./sockets/supportSocket')(io);
+    
+    // Start server for non-Vercel environments
+    server.listen(PORT, () => {
+        console.log(`☑️  POS Server is running on port ${PORT}`);
+    });
+} else {
+    // For Vercel environment, set a mock io object
+    app.set('io', {
+        emit: () => console.log('Socket.IO disabled in Vercel environment'),
+        // Add other necessary mock methods
+    });
+}
 
 // Root Endpoint
 app.get("/", (req,res) => {
     res.json({message : "Hello from POS Server!"});
-})
+});
 
 // Other Endpoints
 app.use("/api/user", require("./routes/userRoute"));
@@ -79,7 +93,5 @@ app.use('/api/employees', employeeRoutes);
 // Global Error Handler
 app.use(globalErrorHandler);
 
-// Server
-server.listen(PORT, () => {
-    console.log(`☑️  POS Server is running on port ${PORT}`);
-})
+// Export for serverless environments
+module.exports = app;
