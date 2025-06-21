@@ -5,7 +5,7 @@ const globalErrorHandler = require("./middlewares/globalErrorHandler");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const app = express();
-const PORT = config.port;
+const PORT = process.env.PORT || config.port; // Add this line to support Render's PORT environment variable
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
@@ -18,6 +18,7 @@ const io = new Server(server, {
             if (origin.indexOf('http://localhost') === 0) return callback(null, true);
             if (origin === 'https://reasturant-pos.vercel.app') return callback(null, true);
             if (origin.match(/https:\/\/.*vercel\.app$/)) return callback(null, true);
+            if (origin.match(/https:\/\/.*onrender\.com$/)) return callback(null, true);
             callback(new Error('Not allowed by CORS'));
         },
         methods: ['GET', 'POST'],
@@ -43,6 +44,9 @@ app.use(cors({
         
         // Allow any Vercel preview domains
         if (origin.match(/https:\/\/.*vercel\.app$/)) return callback(null, true);
+        
+        // Allow Render domains
+        if (origin.match(/https:\/\/.*onrender\.com$/)) return callback(null, true);
         
         // Otherwise, deny the request
         callback(new Error('Not allowed by CORS'));
