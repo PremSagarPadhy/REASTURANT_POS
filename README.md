@@ -59,10 +59,25 @@ npm run dev
 
 ## 📁 Project Structure
 restaurant-pos-system/
-├── client/         # React frontend (Vite)
-├── server/         # Node.js backend (Express)
-├── README.md       # All the Procedure of This Project
-└── .env            # Environment variable sample
+├── client/             # React frontend (Vite + Tailwind CSS)
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── assets/
+│   │   └── App.jsx
+│   └── vite.config.js
+│
+├── server/             # Node.js backend (Express)
+│   ├── controllers/
+│   ├── routes/
+│   ├── models/
+│   └── server.js
+│
+├── .env.example        # Environment variable example file
+├── README.md           # Project documentation
+└── package.json        # Root config (optional monorepo style)
+
 
 ## 📌 TODO / Improvements
 1. Work on 
