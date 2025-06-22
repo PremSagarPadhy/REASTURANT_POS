@@ -9,6 +9,7 @@ import PopularDishes from "../components/home/PopularDishes";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
+const API_URL = "https://reasturant-pos-backend.onrender.com";
 const Home = () => {
   const [earnings, setEarnings] = useState(0);
   const [profitLoss, setProfitLoss] = useState(0);
@@ -34,7 +35,7 @@ const Home = () => {
       try {
         const today = new Date().toISOString().split("T")[0];
         const response = await axios.get(
-          `${API_URL}/payment/daily-earnings?date=${today}`
+          `${API_URL}/api/payment/daily-earnings?date=${today}`
         );
 
         if (response.data.success) {
@@ -56,7 +57,7 @@ const Home = () => {
 
     const fetchOrderComparison = async () => {
       try {
-        const response = await axios.get(`${API_URL}/order/comparison`, {
+        const response = await axios.get(`${API_URL}/api/order/comparison`, {
           withCredentials: true
         });
 
