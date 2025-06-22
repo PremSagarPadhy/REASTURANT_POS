@@ -9,16 +9,6 @@ import PopularDishes from "../components/home/PopularDishes";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_URL = 'https://reasturant-pos-backend.onrender.com/api';
-
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  withCredentials: true
-});
-
 const Home = () => {
   const [earnings, setEarnings] = useState(0);
   const [profitLoss, setProfitLoss] = useState(0);
@@ -26,6 +16,9 @@ const Home = () => {
   const [yesterdayInProgress, setYesterdayInProgress] = useState(0);
   const [progressChange, setProgressChange] = useState(0);
 
+  // Add the API URL definition
+  const API_URL = 'https://reasturant-pos-backend.onrender.com/api';
+  
   // Add this to set background color on the document body
   useEffect(() => {
     // Set background color on mount
@@ -43,8 +36,8 @@ const Home = () => {
     const fetchEarnings = async () => {
       try {
         const today = new Date().toISOString().split("T")[0];
-        const response = await api.get(
-          `/payment/daily-earnings?date=${today}`
+        const response = await axios.get(
+          `${API_URL}/payment/daily-earnings?date=${today}`
         );
 
         if (response.data.success) {
@@ -66,7 +59,7 @@ const Home = () => {
 
     const fetchOrderComparison = async () => {
       try {
-        const response = await api.get("/order/comparison", {
+        const response = await axios.get(`${API_URL}/order/comparison`, {
           withCredentials: true
         });
 

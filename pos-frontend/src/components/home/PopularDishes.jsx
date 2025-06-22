@@ -14,12 +14,9 @@ const PopularDishes = () => {
     const fetchPopularDishes = async () => {
       try {
         setLoading(true);
-        
-        // Use the confirmed working URL
         const apiUrl = `${API_URL}/order/popular-dishes`;
-
         console.log("Fetching popular dishes from:", apiUrl);
-        
+        // Fetch data from the API
         const response = await axios.get(apiUrl, {
           withCredentials: true
         });
