@@ -7,16 +7,19 @@ import axios from "axios";
 import { io } from "socket.io-client";
 import { v4 as uuidv4 } from 'uuid';
 
+const API_URL = import.meta.env.PROD 
+  ? 'https://reasturant-pos-backend.onrender.com/api'
+  : 'http://localhost:8000/api';
+  
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
   },
   withCredentials: true
 });
-
 // Initialize socket connection
-const socket = io('http://localhost:8000', {
+const socket = io(`${API_URL}`, {
   withCredentials: true,
   autoConnect: false,
   reconnection: true,

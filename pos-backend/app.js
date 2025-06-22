@@ -17,6 +17,7 @@ const io = new Server(server, {
             if (!origin) return callback(null, true);
             if (origin.indexOf('http://localhost') === 0) return callback(null, true);
             if (origin === 'https://reasturant-pos.vercel.app') return callback(null, true);
+            if (origin === 'https://reasturant-pos-backend.onrender.com') return callback(null, true);
             if (origin.match(/https:\/\/.*vercel\.app$/)) return callback(null, true);
             if (origin.match(/https:\/\/.*onrender\.com$/)) return callback(null, true);
             callback(new Error('Not allowed by CORS'));
@@ -41,6 +42,9 @@ app.use(cors({
         
         // Allow your main Vercel domain
         if (origin === 'https://reasturant-pos.vercel.app') return callback(null, true);
+        
+        // Allow your main Render domain
+        if (origin === 'https://reasturant-pos-backend.onrender.com') return callback(null, true);
         
         // Allow any Vercel preview domains
         if (origin.match(/https:\/\/.*vercel\.app$/)) return callback(null, true);

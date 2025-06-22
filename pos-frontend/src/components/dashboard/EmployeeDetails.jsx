@@ -8,14 +8,15 @@ import { MdDeleteForever } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import EmployeeAddModal from "./EmployeeAddModal";
 
+
 // API functions
 const getEmployees = async () => {
-  const response = await axios.get("http://localhost:8000/api/employees");
+  const response = await axios.get(`${API_URL}/employees`);
   return response.data;
 };
 
 const deleteEmployee = async (id) => {
-  const response = await axios.delete(`http://localhost:8000/api/employees/${id}`);
+  const response = await axios.delete(`${API_URL}/employees/${id}`);
   return response.data;
 };
 

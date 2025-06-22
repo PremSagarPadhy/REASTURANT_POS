@@ -5,9 +5,13 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaSave, FaTimes } from "react-icons/fa";
 
+const API_URL = import.meta.env.PROD 
+  ? 'https://reasturant-pos-backend.onrender.com/api'
+  : 'http://localhost:8000/api';
+
 // API function to add a new employee
 const addEmployee = async (employeeData) => {
-  const response = await axios.post("http://localhost:8000/api/employees", employeeData);
+  const response = await axios.post(`${API_URL}/employees`, employeeData);
   return response.data;
 };
 

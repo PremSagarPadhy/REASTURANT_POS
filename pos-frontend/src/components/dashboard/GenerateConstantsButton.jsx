@@ -10,8 +10,8 @@ const GenerateConstantsButton = () => {
     
     setIsGenerating(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/category/generate-constants');
-      
+      const response = await axios.get(`${API_URL}/category/generate-constants`);
+
       if (response.status === 200) {
         toast.success('Constants file generated successfully!');
         toast.success('Please restart your development server to see changes');

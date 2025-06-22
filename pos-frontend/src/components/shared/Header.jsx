@@ -11,6 +11,10 @@ import { removeUser } from "../../redux/slices/userSlice";
 import { useNavigate, useLocation } from "react-router-dom";
 import { io } from "socket.io-client";
 
+const API_URL = import.meta.env.PROD 
+  ? 'https://reasturant-pos-backend.onrender.com/api'
+  : 'http://localhost:8000/api';
+
 const Header = () => {
   const userData = useSelector((state) => state.user);
   const dispatch = useDispatch();
@@ -33,7 +37,7 @@ const Header = () => {
     // Only connect if the user is logged in
     if (userData.token) {
       // Connect to the WebSocket server
-      socketRef.current = io('http://localhost:8000', {
+      socketRef.current = io('https://reasturant-pos-backend.onrender.com', {
         withCredentials: true
       });
 

@@ -9,14 +9,17 @@ const PopularDishes = () => {
   const [error, setError] = useState(null);
   const [visibleDishes, setVisibleDishes] = useState([]);
 
+  const API_URL = import.meta.env.PROD 
+  ? 'https://reasturant-pos-backend.onrender.com/api'
+  : 'http://localhost:8000/api';
   useEffect(() => {
     const fetchPopularDishes = async () => {
       try {
         setLoading(true);
         
         // Use the confirmed working URL
-        const apiUrl = 'http://localhost:8000/api/order/popular-dishes';
-        
+        const apiUrl = `${API_URL}/order/popular-dishes`;
+
         console.log("Fetching popular dishes from:", apiUrl);
         
         const response = await axios.get(apiUrl, {

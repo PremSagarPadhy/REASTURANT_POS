@@ -5,6 +5,10 @@ import { toast } from 'react-hot-toast';
 
 let activeMenus = localMenus;
 
+const API_URL = import.meta.env.PROD 
+  ? 'https://reasturant-pos-backend.onrender.com/api'
+  : 'http://localhost:8000/api';
+
 // Try to import the database-generated constants
 try {
   // Dynamic import isn't available in regular JavaScript modules this way
@@ -27,7 +31,7 @@ export const getMenus = () => {
 export const refreshMenus = async () => {
   try {
     // Fetch the latest menu data from the API
-    const response = await fetch('http://localhost:5000/api/category');
+    const response = await fetch('${API_URL}/category');
     if (response.ok) {
       const freshMenus = await response.json();
       if (freshMenus && freshMenus.length > 0) {

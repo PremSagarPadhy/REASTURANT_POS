@@ -2,6 +2,18 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
+const API_URL = import.meta.env.PROD 
+  ? 'https://reasturant-pos-backend.onrender.com/api'
+  : 'http://localhost:8000/api';
+
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  withCredentials: true
+});
+
 const ApiTestingTool = () => {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -18,9 +30,9 @@ const ApiTestingTool = () => {
       let response;
       
       if (method === 'GET') {
-        response = await axios.get(`http://localhost:8000${url}`);
+        response = await axios.get(`https://reasturant-pos-backend.onrender.com${url}`);
       } else if (method === 'POST') {
-        response = await axios.post(`http://localhost:8000${url}`);
+        response = await axios.post(`https://reasturant-pos-backend.onrender.com${url}`);
       }
       
       setResult(JSON.stringify(response.data, null, 2));

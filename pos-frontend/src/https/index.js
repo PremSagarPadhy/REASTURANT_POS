@@ -2,8 +2,12 @@ import { axiosWrapper } from "./axiosWrapper";
 import axios from 'axios'; // Add this import
 
 // API Endpoints
-const API = axios.create({ 
-  baseURL: 'http://localhost:8000/api' 
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  withCredentials: true
 });
 // Auth Endpoints
 export const login = (data) => axiosWrapper.post("/api/user/login", data);

@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 // Base URL for API
-const API_URL = 'http://localhost:8000/api';
+const API_URL = import.meta.env.PROD 
+  ? 'https://reasturant-pos-backend.onrender.com/api'
+  : 'http://localhost:8000/api';
 
 // Configure axios defaults
 const api = axios.create({

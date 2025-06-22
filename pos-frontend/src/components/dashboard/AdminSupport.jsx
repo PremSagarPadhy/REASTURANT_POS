@@ -9,7 +9,7 @@ import { io } from "socket.io-client"; // Import socket.io-client
 
 // Create API service for support endpoints
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
   },
@@ -23,7 +23,7 @@ const markAsReadApi = (customerId) => api.put(`/support/customers/${customerId}/
 const updateStatusApi = (customerId, status) => api.put(`/support/customers/${customerId}/status`, { status });
 
 // Initialize socket connection
-const socket = io('http://localhost:8000', {
+const socket = io(API_URL.replace('/api', ''), {
   withCredentials: true,
   autoConnect: false
 });

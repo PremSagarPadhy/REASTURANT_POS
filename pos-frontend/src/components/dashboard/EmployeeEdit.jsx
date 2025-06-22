@@ -7,14 +7,17 @@ import { motion } from "framer-motion";
 import { FaLock, FaSave, FaArrowLeft } from "react-icons/fa";
 import { MdModeEdit } from "react-icons/md"; // Import pen edit icon
 
+const API_URL = import.meta.env.PROD 
+  ? 'https://reasturant-pos-backend.onrender.com/api'
+  : 'http://localhost:8000/api';
 // API functions
 const getEmployeeById = async (id) => {
-  const response = await axios.get(`http://localhost:8000/api/employees/${id}`);
+  const response = await axios.get(`${API_URL}/employees/${id}`);
   return response.data;
 };
 
 const updateEmployee = async ({ id, data }) => {
-  const response = await axios.put(`http://localhost:8000/api/employees/${id}`, data);
+  const response = await axios.put(`${API_URL}/employees/${id}`, data);
   return response.data;
 };
 

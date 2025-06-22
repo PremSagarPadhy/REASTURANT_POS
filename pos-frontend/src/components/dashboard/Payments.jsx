@@ -8,6 +8,10 @@ import Chart from "react-apexcharts";
 // Import Framer Motion at the top of your file
 import { motion, AnimatePresence } from "framer-motion";
 
+const API_URL = import.meta.env.PROD 
+  ? 'https://reasturant-pos-backend.onrender.com/api'
+  : 'http://localhost:8000/api';
+
 const Payments = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -201,7 +205,7 @@ const Payments = () => {
   const fetchTotalEarnings = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8000/api/payment/total-earnings",
+        `${API_URL}/payment/total-earnings`,
         { withCredentials: true }
       );
 
@@ -217,7 +221,7 @@ const Payments = () => {
   const fetchDailyEarnings = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:8000/api/payment/daily-earnings?date=${selectedDate}`,
+        `${API_URL}/payment/daily-earnings?date=${selectedDate}`,
         { withCredentials: true }
       );
 
@@ -251,7 +255,7 @@ const Payments = () => {
     try {
       console.log("Fetching earnings for range:", range);
       const response = await axios.get(
-        `http://localhost:8000/api/payment/daily-earnings-range?range=${range}`,
+        `${API_URL}/payment/daily-earnings-range?range=${range}`,
         { withCredentials: true }
       );
 
@@ -408,7 +412,7 @@ const Payments = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `http://localhost:8000/api/payment/range?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`,
+        `${API_URL}/payment/range?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`,
         { withCredentials: true }
       );
 
@@ -431,14 +435,14 @@ const Payments = () => {
 
       if (isDateRangeActive) {
         response = await axios.get(
-          `http://localhost:8000/api/payment/range?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`,
+          `${API_URL}/payment/range?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`,
           { withCredentials: true }
         );
       } else {
         response = await axios.get(
           showAllPayments
-            ? `http://localhost:8000/api/payment/all`
-            : `http://localhost:8000/api/payment?date=${selectedDate}`,
+            ? `${API_URL}/payment/all`
+            : `${API_URL}/payment?date=${selectedDate}`,
           { withCredentials: true }
         );
       }

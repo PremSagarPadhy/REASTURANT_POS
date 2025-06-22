@@ -2,6 +2,10 @@ import React, { createContext, useContext, useState, useRef, useEffect } from 'r
 import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
 
+const API_URL = import.meta.env.PROD 
+  ? 'https://reasturant-pos-backend.onrender.com/api'
+  : 'http://localhost:8000/api';
+
 const NotificationContext = createContext();
 
 export const useNotification = () => {
@@ -20,7 +24,7 @@ export const NotificationProvider = ({ children }) => {
       console.log('Initializing socket connection for notifications');
       
       // Connect to the WebSocket server - MAKE SURE PORT MATCHES BACKEND
-      socketRef.current = io('http://localhost:8000', {
+      socketRef.current = io(`${API_URL}`, {
         withCredentials: true
       });
 
