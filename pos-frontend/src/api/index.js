@@ -1,9 +1,7 @@
 import axios from 'axios';
 
 // Base URL for API
-const API_URL = import.meta.env.PROD 
-  ? 'https://reasturant-pos-backend.onrender.com/api'
-  : 'http://localhost:8000/api';
+const API_URL = 'https://reasturant-pos-backend.onrender.com/api'
 
 // Configure axios defaults
 const api = axios.create({
@@ -32,6 +30,12 @@ export const getOrders = () => api.get('/order');
 export const createOrder = (orderData) => api.post('/order', orderData);
 export const updateOrder = (id, orderData) => api.put(`/order/${id}`, orderData);
 export const deleteOrder = (id) => api.delete(`/order/${id}`);
+// Add these new functions for popular dishes and order comparison
+export const getPopularDishes = () => api.get('/order/popular-dishes');
+export const getOrderComparison = () => api.get('/order/comparison');
+
+// Payment/Earnings endpoints
+export const getDailyEarnings = (date) => api.get(`/payment/daily-earnings?date=${date}`);
 
 // Table-related endpoints
 export const getTables = () => api.get('/table');
