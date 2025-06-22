@@ -7,6 +7,8 @@ import axios from "axios";
 import { enqueueSnackbar } from "notistack";
 import { io } from "socket.io-client"; // Import socket.io-client
 
+const API_URL = 'https://reasturant-pos-backend.onrender.com/api';
+
 // Create API service for support endpoints
 const api = axios.create({
   baseURL: API_URL,

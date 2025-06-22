@@ -12,6 +12,15 @@ const api = axios.create({
   withCredentials: true
 });
 
+// Auth Endpoints
+export const login = (data) => api.post("/user/login", data);
+export const register = (data) => api.post("/user/register", data);
+export const getUserData = () => api.get("/user");
+export const logout = () => {
+  localStorage.removeItem('token');
+  return api.post("/user/logout");
+};
+
 // Category API endpoints
 export const getCategories = () => api.get('/category');
 export const getCategoryById = (id) => api.get(`/category/${id}`);
@@ -28,18 +37,34 @@ export const getMenuItems = (categoryId) => api.get(`/category/${categoryId}/ite
 // Order-related endpoints
 export const getOrders = () => api.get('/order');
 export const createOrder = (orderData) => api.post('/order', orderData);
+export const addOrder = (data) => api.post('/order', data);
+export const updateOrderStatus = ({ orderId, orderStatus }) =>
+  api.put(`/order/${orderId}`, { orderStatus });
+export const getOrderById = (orderId) => api.get(`/order/${orderId}`);
 export const updateOrder = (id, orderData) => api.put(`/order/${id}`, orderData);
 export const deleteOrder = (id) => api.delete(`/order/${id}`);
+
 // Add these new functions for popular dishes and order comparison
 export const getPopularDishes = () => api.get('/order/popular-dishes');
 export const getOrderComparison = () => api.get('/order/comparison');
 
 // Payment/Earnings endpoints
 export const getDailyEarnings = (date) => api.get(`/payment/daily-earnings?date=${date}`);
+export const createOrderRazorpay = (data) => api.post("/payment/create-order", data);
+export const verifyPaymentRazorpay = (data) => api.post("/payment/verify-payment", data);
+export const createAdditionalItemsOrderRazorpay = (reqData) => api.post("/payment/createAdditionalOrder", reqData);
 
 // Table-related endpoints
 export const getTables = () => api.get('/table');
+export const addTable = (data) => api.post('/table', data);
 export const updateTable = (id, tableData) => api.put(`/table/${id}`, tableData);
+export const deleteTable = (tableId) => api.delete(`/table/${tableId}`);
+
+// Item Endpoints
+export const getCategoryItems = (categoryId) => api.get(`/category/${categoryId}/items`);
+export const addItemToCategory = (categoryId, itemData) => api.post(`/category/${categoryId}/items`, itemData);
+export const updateItemInCategory = (categoryId, itemId, itemData) => api.put(`/category/${categoryId}/items/${itemId}`, itemData);
+export const deleteItemFromCategory = (categoryId, itemId) => api.delete(`/category/${categoryId}/items/${itemId}`);
 
 // Inventory endpoints
 export const getInventoryItems = () => api.get('/inventory');

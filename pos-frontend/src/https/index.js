@@ -1,6 +1,7 @@
 import { axiosWrapper } from "./axiosWrapper";
 import axios from 'axios'; // Add this import
 
+export const API_URL = 'https://reasturant-pos-backend.onrender.com';
 // API Endpoints
 const api = axios.create({
   baseURL: API_URL,
