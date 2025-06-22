@@ -9,16 +9,22 @@ const PopularDishes = () => {
   const [error, setError] = useState(null);
   const [visibleDishes, setVisibleDishes] = useState([]);
 
-  const API_URL ='https://reasturant-pos-backend.onrender.com/api';
+  const API_URL = 'https://reasturant-pos-backend.onrender.com/api';
+  
   useEffect(() => {
     const fetchPopularDishes = async () => {
       try {
         setLoading(true);
         const apiUrl = `${API_URL}/order/popular-dishes`;
         console.log("Fetching popular dishes from:", apiUrl);
-        // Fetch data from the API
+        
+        // Updated request with proper headers
         const response = await axios.get(apiUrl, {
-          withCredentials: true
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
         });
         
         if (response.data && response.data.success) {
