@@ -9,9 +9,7 @@ import PopularDishes from "../components/home/PopularDishes";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_URL = import.meta.env.PROD 
-  ? 'https://reasturant-pos-backend.onrender.com/api'
-  : 'http://localhost:8000/api';
+const API_URL = 'https://reasturant-pos-backend.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
