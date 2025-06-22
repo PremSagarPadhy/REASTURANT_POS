@@ -16,9 +16,6 @@ const Home = () => {
   const [yesterdayInProgress, setYesterdayInProgress] = useState(0);
   const [progressChange, setProgressChange] = useState(0);
 
-  // Add the API URL definition
-  const API_URL = 'https://reasturant-pos-backend.onrender.com/api';
-  
   // Add this to set background color on the document body
   useEffect(() => {
     // Set background color on mount
