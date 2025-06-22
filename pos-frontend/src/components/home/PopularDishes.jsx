@@ -8,9 +8,7 @@ const PopularDishes = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [visibleDishes, setVisibleDishes] = useState([]);
-
-  const API_URL = 'https://reasturant-pos-backend.onrender.com';
-  
+ 
   useEffect(() => {
     const fetchPopularDishes = async () => {
       try {
