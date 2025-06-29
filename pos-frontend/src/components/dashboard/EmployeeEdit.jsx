@@ -2,24 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { enqueueSnackbar } from "notistack";
-import axios from "axios";
 import { motion } from "framer-motion";
 import { FaLock, FaSave, FaArrowLeft } from "react-icons/fa";
 import { MdModeEdit } from "react-icons/md"; // Import pen edit icon
-
-const API_URL = import.meta.env.PROD 
-  ? 'https://reasturant-pos-backend.onrender.com/api'
-  : 'http://localhost:8000/api';
-// API functions
-const getEmployeeById = async (id) => {
-  const response = await axios.get(`${API_URL}/employees/${id}`);
-  return response.data;
-};
-
-const updateEmployee = async ({ id, data }) => {
-  const response = await axios.put(`${API_URL}/employees/${id}`, data);
-  return response.data;
-};
+import { getEmployeeById, updateEmployee } from '../../api/index.js';
 
 const EmployeeEdit = () => {
   const { id } = useParams();

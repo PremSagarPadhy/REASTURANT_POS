@@ -1,24 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { enqueueSnackbar } from "notistack";
-import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaEye } from "react-icons/fa";
+import { FaEye, FaFilter } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import EmployeeAddModal from "./EmployeeAddModal";
-
-
-// API functions
-const getEmployees = async () => {
-  const response = await axios.get(`${API_URL}/employees`);
-  return response.data;
-};
-
-const deleteEmployee = async (id) => {
-  const response = await axios.delete(`${API_URL}/employees/${id}`);
-  return response.data;
-};
+import { getEmployees, deleteEmployee } from '../../api/index.js';
 
 // Filter popover component for table headers
 const TableColumnFilter = ({ column, onFilterChange, isOpen, setIsOpen }) => {
@@ -51,7 +39,7 @@ const TableColumnFilter = ({ column, onFilterChange, isOpen, setIsOpen }) => {
     <AnimatePresence>
       {isOpen && (
         <motion.div 
-          className={`absolute z-10 mt-1 bg-[#333] shadow-lg rounded-lg p-3 w-64 filter-${column}`}
+          className={`absolute z-10 mt-1 bg-[#333] shadow-lg rounded-lg p-3 w-64 filter-${column} right-0`}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
@@ -145,12 +133,23 @@ const EmployeeDetails = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
-
   // Fetch employees data
-  const { data, isError, isLoading } = useQuery({
+  const { data, isError, isLoading, error } = useQuery({
     queryKey: ["employees"],
     queryFn: getEmployees,
+    retry: 1,
+    onError: (error) => {
+      console.error('Error fetching employees:', error);
+    },
+    onSuccess: (data) => {
+      console.log('Successfully fetched employees:', data);
+    }
   });
+
+  // Add debugging effect
+  useEffect(() => {
+    console.log('Employee query state:', { data, isError, isLoading, error });
+  }, [data, isError, isLoading, error]);
 
   // Delete employee mutation
   const deleteMutation = useMutation({
@@ -202,17 +201,16 @@ const EmployeeDetails = () => {
   };
 
   if (isError) {
-    enqueueSnackbar("Failed to load employees!", { variant: "error" });
-  }
+    enqueueSnackbar("Failed to load employees!", { variant: "error" });  }
 
   // Extract unique positions for filter dropdown
-  const positions = data?.data 
-    ? [...new Set(data.data.map(emp => emp.position))]
+  const positions = data 
+    ? [...new Set(data.map(emp => emp.position))]
     : [];
 
   // Apply all filters to employees
-  const filteredEmployees = data?.data 
-    ? data.data.filter(employee => {
+  const filteredEmployees = data 
+    ? data.filter(employee => {
         // Apply search filter
         const matchesSearch = 
           employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -255,14 +253,13 @@ const EmployeeDetails = () => {
         return matchesSearch && matchesPosition && matchesColumnFilters;
       })
     : [];
-
   // Define table headers with filter functionality
   const tableHeaders = [
-    { id: "ID", label: "Employee ID" },
-    { id: "Name", label: "Name" },
-    { id: "Phone", label: "Phone" },
-    { id: "Position", label: "Position" },
-    { id: "Address", label: "Address" },
+    { id: "ID", label: "Emp. ID" },
+    { id: "Name", label: "Emp. Name" },
+    { id: "Phone", label: "Emp. Ph No." },
+    { id: "Position", label: "Emp. Position" },
+    { id: "Address", label: "Emp. Address" },
     { id: "Actions", label: "Actions" },
   ];
 
@@ -376,17 +373,43 @@ const EmployeeDetails = () => {
                 className="rounded-full h-12 w-12 border-t-2 border-b-2 border-[#025cca]"
               ></motion.div>
             </div>
-          ) : (
-            <div className="overflow-auto custom-scrollbar-hidden max-h-[70vh]">
+          ) : (            <div className="overflow-auto custom-scrollbar-hidden max-h-[70vh]">
               <table className="w-full text-left text-[#f5f5f5]">
                 <thead>
                   <tr className="bg-[#2f2f2f] text-[#f5f5f5]">
-                    <th className="gap-3 px-4 py-3 text-center font-semibold">Employee ID</th>
-                    <th className="px-4 py-3 text-left font-semibold"> Employee Name</th>
-                    <th className="px-4 py-3 text-center font-semibold">Phone No.</th>
-                    <th className="px-4 py-3 text-left font-semibold">Position</th>
-                    <th className="px-5 py-3 text-center font-semibold min-w-[100px]">Address</th>
-                    <th className="px-4 py-3 text-left font-semibold">Actions</th>
+                    {tableHeaders.map((header) => (
+                      <th key={header.id} className="px-4 py-3 font-semibold relative">
+                        <div className="flex items-center justify-between">
+                          <span className={header.id === "ID" || header.id === "Phone" ? "text-center" : "text-left"}>
+                            {header.label}
+                          </span>
+                          {header.id !== "Actions" && (
+                            <motion.button
+                              whileHover={{ scale: 1.2 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => toggleFilterDropdown(header.id)}
+                              className="ml-2 p-1 rounded hover:bg-[#4a4a4a] transition-colors"
+                            >
+                              <FaFilter 
+                                className={`text-xs ${
+                                  columnFilters[header.id] ? 'text-[#025cca]' : 'text-[#ababab]'
+                                }`} 
+                              />
+                            </motion.button>
+                          )}
+                        </div>
+                        
+                        {/* Filter Dropdown */}
+                        {header.id !== "Actions" && (
+                          <TableColumnFilter
+                            column={header.id}
+                            onFilterChange={handleColumnFilterChange}
+                            isOpen={activeFilter === header.id}
+                            setIsOpen={() => setActiveFilter(null)}
+                          />
+                        )}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -472,7 +495,7 @@ const EmployeeDetails = () => {
                 whileHover={{ scale: 1.05 }}
                 className="text-[#ababab] text-sm"
               >
-                Showing {filteredEmployees.length} of {data?.data?.length || 0} employees
+                Showing {filteredEmployees.length} of {data?.length || 0} employees
               </motion.span>
               
               <div className="flex gap-1">

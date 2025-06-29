@@ -8,8 +8,7 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
-  },
-  withCredentials: true
+  }
 });
 
 // Auth Endpoints
@@ -77,6 +76,22 @@ export const deleteInventoryItem = (itemId) => api.delete(`/inventory/${itemId}`
 export const restockItem = (itemId, data) => api.post(`/inventory/${itemId}/restock`, data);
 export const useItem = (itemId, data) => api.post(`/inventory/${itemId}/use`, data);
 
+// Employee endpoints
+export const getEmployees = () => {
+  return api.get('/employees')
+    .then(res => {
+      console.log('Employee API Response:', res.data);
+      return res.data.data || res.data;
+    })
+    .catch(err => {
+      console.error('Error fetching employees:', err);
+      throw err;
+    });
+};
+export const getEmployeeById = (id) => api.get(`/employees/${id}`).then(res => res.data.data);
+export const addEmployee = (employeeData) => api.post('/employees', employeeData).then(res => res.data.data);
+export const updateEmployee = ({ id, data }) => api.put(`/employees/${id}`, data).then(res => res.data.data);
+export const deleteEmployee = (id) => api.delete(`/employees/${id}`).then(res => res.data);
 
 // Set up request interceptor for handling tokens if needed
 api.interceptors.request.use(

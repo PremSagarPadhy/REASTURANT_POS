@@ -3,9 +3,12 @@ const Employee = require('../models/Employee');
 // Get all employees
 exports.getAllEmployees = async (req, res) => {
   try {
+    console.log('GET /api/employees - Fetching all employees');
     const employees = await Employee.find();
+    console.log(`Found ${employees.length} employees:`, employees);
     res.json({ success: true, data: employees });
   } catch (err) {
+    console.error('Error fetching employees:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
@@ -46,10 +49,18 @@ exports.deleteEmployee = async (req, res) => {
 // Create a new employee
 exports.createEmployee = async (req, res) => {
   try {
+    console.log('Received employee data:', req.body);
     const newEmployee = new Employee(req.body);
     await newEmployee.save();
     res.status(201).json({ success: true, data: newEmployee });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error('Error creating employee:', err.message);
+    if (err.code === 11000) {
+      // Duplicate key error
+      const field = Object.keys(err.keyPattern)[0];
+      res.status(400).json({ success: false, message: `Employee with this ${field} already exists` });
+    } else {
+      res.status(400).json({ success: false, message: err.message });
+    }
   }
 };
