@@ -77,6 +77,7 @@ export const deleteInventoryItem = (itemId) => api.delete(`/inventory/${itemId}`
 export const restockItem = (itemId, data) => api.post(`/inventory/${itemId}/restock`, data);
 export const useItem = (itemId, data) => api.post(`/inventory/${itemId}/use`, data);
 
+
 // Set up request interceptor for handling tokens if needed
 api.interceptors.request.use(
   (config) => {

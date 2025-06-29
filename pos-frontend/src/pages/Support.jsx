@@ -7,10 +7,8 @@ import axios from "axios";
 import { io } from "socket.io-client";
 import { v4 as uuidv4 } from 'uuid';
 
-const API_URL = import.meta.env.PROD 
-  ? 'https://reasturant-pos-backend.onrender.com/api'
-  : 'http://localhost:8000/api';
-  
+const API_URL = 'https://reasturant-pos-backend.onrender.com';
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -19,7 +17,7 @@ const api = axios.create({
   withCredentials: true
 });
 // Initialize socket connection
-const socket = io(`${API_URL}`, {
+const socket = io(API_URL, {
   withCredentials: true,
   autoConnect: false,
   reconnection: true,
@@ -251,8 +249,8 @@ const Support = () => {
     setLookupError("");
     
     try {
-      const response = await api.get(`/support/lookup/${lookupPhone}`);
-      
+      const response = await api.get(`${API_URL}/support/lookup/${lookupPhone}`);
+
       if (response.data.success && response.data.customer) {
         setFoundCustomer(response.data.customer);
         
@@ -305,14 +303,14 @@ const Support = () => {
     
     try {
       // Create or get existing support customer
-      const response = await api.post('/support/register', customerInfo);
+      const response = await api.post(`${API_URL}/support/register`, customerInfo);
       const newCustomerId = response.data.customerId;
       setCustomerId(newCustomerId);
       
       // If we found previous chats, load them
       if (foundCustomer) {
-        const chatsResponse = await api.get(`/support/chats/${newCustomerId}`);
-        
+        const chatsResponse = await api.get(`${API_URL}/support/chats/${newCustomerId}`);
+
         if (chatsResponse.data.success && chatsResponse.data.chats) {
           // Transform the chats to match our format
           const formattedChats = chatsResponse.data.chats.map((chat) => ({
@@ -472,7 +470,7 @@ const Support = () => {
       }]);
       
       // Update chat status on server
-      await api.put(`/support/customers/${customerId}/status`, { status: 'resolved' });
+      await api.put(`${API_URL}/support/customers/${customerId}/status`, { status: 'resolved' });
 
       // Disconnect socket after confirming end of chat
       setTimeout(() => {
