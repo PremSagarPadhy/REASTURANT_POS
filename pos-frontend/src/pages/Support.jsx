@@ -3,19 +3,18 @@ import { MdSend, MdLogout, MdWifi, MdWifiOff } from "react-icons/md";
 import { BsEmojiSmile } from "react-icons/bs";
 import { IoMdAttach } from "react-icons/io";
 import { FaHistory } from "react-icons/fa";
-import axios from "axios";
 import { io } from "socket.io-client";
 import { v4 as uuidv4 } from 'uuid';
+import { 
+  registerSupportCustomer, 
+  sendSupportMessage, 
+  lookupCustomerByPhone, 
+  getCustomerChats,
+  updateSupportStatus 
+} from "../api/index";
 
 const API_URL = 'https://reasturant-pos-backend.onrender.com';
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  withCredentials: true
-});
 // Initialize socket connection
 const socket = io(API_URL, {
   withCredentials: true,
@@ -249,7 +248,7 @@ const Support = () => {
     setLookupError("");
     
     try {
-      const response = await api.get(`${API_URL}/support/lookup/${lookupPhone}`);
+      const response = await lookupCustomerByPhone(lookupPhone);
 
       if (response.data.success && response.data.customer) {
         setFoundCustomer(response.data.customer);
@@ -303,13 +302,13 @@ const Support = () => {
     
     try {
       // Create or get existing support customer
-      const response = await api.post(`${API_URL}/support/register`, customerInfo);
+      const response = await registerSupportCustomer(customerInfo);
       const newCustomerId = response.data.customerId;
       setCustomerId(newCustomerId);
       
       // If we found previous chats, load them
       if (foundCustomer) {
-        const chatsResponse = await api.get(`${API_URL}/support/chats/${newCustomerId}`);
+        const chatsResponse = await getCustomerChats(newCustomerId);
 
         if (chatsResponse.data.success && chatsResponse.data.chats) {
           // Transform the chats to match our format
@@ -470,7 +469,7 @@ const Support = () => {
       }]);
       
       // Update chat status on server
-      await api.put(`${API_URL}/support/customers/${customerId}/status`, { status: 'resolved' });
+      await updateSupportStatus(customerId, 'resolved');
 
       // Disconnect socket after confirming end of chat
       setTimeout(() => {

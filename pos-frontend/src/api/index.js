@@ -93,6 +93,16 @@ export const addEmployee = (employeeData) => api.post('/employees', employeeData
 export const updateEmployee = ({ id, data }) => api.put(`/employees/${id}`, data).then(res => res.data.data);
 export const deleteEmployee = (id) => api.delete(`/employees/${id}`).then(res => res.data);
 
+// Support endpoints
+export const registerSupportCustomer = (customerData) => api.post('/support/register', customerData);
+export const sendSupportMessage = (messageData) => api.post('/support/customer-message', messageData);
+export const lookupCustomerByPhone = (phone) => api.get(`/support/lookup/${phone}`);
+export const getCustomerChats = (customerId) => api.get(`/support/chats/${customerId}`);
+export const getSupportCustomers = () => api.get('/support/customers');
+export const sendAdminMessage = (messageData) => api.post('/support/messages', messageData);
+export const markSupportMessagesAsRead = (customerId) => api.put(`/support/customers/${customerId}/read`);
+export const updateSupportStatus = (customerId, status) => api.put(`/support/customers/${customerId}/status`, { status });
+
 // Set up request interceptor for handling tokens if needed
 api.interceptors.request.use(
   (config) => {
