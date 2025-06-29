@@ -15,12 +15,27 @@
       "destination": "https://reasturant-pos-backend.onrender.com/api/$1"
     },
     {
-      "source": "/favicon.ico",
-      "destination": "/vite.svg"
-    },
+      "source": "/((?!api|_next|_static|favicon.ico|assets/).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
     }
   ],
   "cleanUrls": true,
