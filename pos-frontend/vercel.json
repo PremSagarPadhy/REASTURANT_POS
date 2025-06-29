@@ -13,6 +13,10 @@
     {
       "source": "/api/(.*)",
       "destination": "https://reasturant-pos-backend.onrender.com/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "cleanUrls": true,
