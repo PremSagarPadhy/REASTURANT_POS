@@ -15,6 +15,10 @@
       "destination": "https://reasturant-pos-backend.onrender.com/api/$1"
     },
     {
+      "source": "/favicon.ico",
+      "destination": "/vite.svg"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
