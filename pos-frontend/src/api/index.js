@@ -8,8 +8,7 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
-  },
-  withCredentials: true
+  }
 });
 
 // Auth Endpoints
@@ -48,42 +47,8 @@ export const deleteOrder = (id) => api.delete(`/order/${id}`);
 export const getPopularDishes = () => api.get('/order/popular-dishes');
 export const getOrderComparison = () => api.get('/order/comparison');
 
-// Payment/Earnings endpoints - with error handling
-export const getDailyEarnings = async (date) => {
-  try {
-    return await api.get(`/payment/daily-earnings?date=${date}`);
-  } catch (error) {
-    console.error('Error in getDailyEarnings:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getTotalEarnings = async () => {
-  try {
-    return await api.get('/payment/total-earnings');
-  } catch (error) {
-    console.error('Error in getTotalEarnings:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getDailyEarningsRange = async (range) => {
-  try {
-    return await api.get(`/payment/daily-earnings-range?range=${range}`);
-  } catch (error) {
-    console.error('Error in getDailyEarningsRange:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getPayments = (date) => {
-  if (date === 'all') {
-    return api.get('/payment/all');
-  }
-  return api.get(`/payment?date=${date}`);
-};
-
-export const getPaymentsByDateRange = (startDate, endDate) => api.get(`/payment/range?startDate=${startDate}&endDate=${endDate}`);
+// Payment/Earnings endpoints
+export const getDailyEarnings = (date) => api.get(`/payment/daily-earnings?date=${date}`);
 export const createOrderRazorpay = (data) => api.post("/payment/create-order", data);
 export const verifyPaymentRazorpay = (data) => api.post("/payment/verify-payment", data);
 export const createAdditionalItemsOrderRazorpay = (reqData) => api.post("/payment/createAdditionalOrder", reqData);
@@ -132,8 +97,6 @@ export const deleteEmployee = (id) => api.delete(`/employees/${id}`).then(res =>
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    console.log('Token being used:', token ? 'Token present' : 'No token');
-    console.log('Request to:', config.url);
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -150,27 +113,10 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Handle unauthorized access - perhaps redirect to login
       console.error('Authentication failed. Redirecting to login...');
-      console.error('Failed endpoint:', error.config?.url);
-      console.error('Token present:', !!localStorage.getItem('token'));
-      
-      // Clear invalid token and redirect to login
-      handleAuthError();
+      // You could dispatch a logout action or redirect here
     }
     return Promise.reject(error);
   }
 );
-
-// Helper function to check if user is authenticated
-export const isAuthenticated = () => {
-  const token = localStorage.getItem('token');
-  return !!token;
-};
-
-// Helper function to handle authentication errors
-export const handleAuthError = () => {
-  localStorage.removeItem('token');
-  // You can add navigation to login page here
-  window.location.href = '/auth';
-};
 
 export default api;

@@ -310,12 +310,20 @@ const getDayByDayPayments = async (req, res, next) => {
         }
       },
       {
+        $project: {
+          amount: 1,
+          createdAt: 1,
+          dateString: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt"
+            }
+          }
+        }
+      },
+      {
         $group: {
-          _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" },
-            day: { $dayOfMonth: "$createdAt" }
-          },
+          _id: "$dateString",
           date: { $first: "$createdAt" },
           totalAmount: { $sum: "$amount" },
           count: { $sum: 1 }
@@ -325,9 +333,7 @@ const getDayByDayPayments = async (req, res, next) => {
       {
         $project: {
           _id: 0,
-          date: {
-            $dateToString: { format: "%Y-%m-%d", date: "$date" }
-          },
+          date: "$_id",
           totalAmount: 1,
           count: 1
         }
@@ -354,6 +360,14 @@ const getDailyEarningsByRange = async (req, res, next) => {
     // Default to last7days if no range specified
     const rangeType = range || "last7days";
     
+    // Debug: Log server timezone information
+    console.log("Server timezone info:", {
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      offset: new Date().getTimezoneOffset(),
+      localDate: new Date().toLocaleDateString(),
+      isoDate: new Date().toISOString().split('T')[0]
+    });
+    
     // Calculate date range based on selection
     let startDate = new Date();
     let endDate = new Date();
@@ -361,6 +375,7 @@ const getDailyEarningsByRange = async (req, res, next) => {
     switch (rangeType) {
       case "today":
         startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
         break;
       case "yesterday":
         startDate.setDate(startDate.getDate() - 1);
@@ -371,30 +386,38 @@ const getDailyEarningsByRange = async (req, res, next) => {
       case "last7days":
         startDate.setDate(startDate.getDate() - 6);
         startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
         break;
       case "last30days":
         startDate.setDate(startDate.getDate() - 29);
         startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
         break;
       case "last90days":
         startDate.setDate(startDate.getDate() - 89);
         startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
         break;
       default:
         startDate.setDate(startDate.getDate() - 6);
         startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
     }
     
-    // Format dates for aggregation
+    // Format dates for aggregation - ensure we use local date boundaries
     const formattedDates = [];
     const currentDate = new Date(startDate);
     
+    // Generate dates using local date arithmetic to avoid timezone shifts
     while (currentDate <= endDate) {
-      formattedDates.push(new Date(currentDate));
+      // Create a new date for each iteration to avoid reference issues
+      const dateForArray = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+      formattedDates.push(dateForArray);
       currentDate.setDate(currentDate.getDate() + 1);
     }
     
-    // Get payments for the specified period
+    // Get payments for the specified period  
+    // Use a simpler approach that groups by the actual date components without timezone conversion
     const paymentsData = await Payment.aggregate([
       {
         $match: {
@@ -403,12 +426,22 @@ const getDailyEarningsByRange = async (req, res, next) => {
         }
       },
       {
+        $project: {
+          amount: 1,
+          createdAt: 1,
+          // Create a date string using server's local timezone
+          dateString: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt",
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            }
+          }
+        }
+      },
+      {
         $group: {
-          _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" },
-            day: { $dayOfMonth: "$createdAt" }
-          },
+          _id: "$dateString",
           date: { $first: "$createdAt" },
           totalAmount: { $sum: "$amount" }
         }
@@ -420,15 +453,35 @@ const getDailyEarningsByRange = async (req, res, next) => {
     let dates = [];
     let earnings = [];
     
+    console.log("Aggregation result:", paymentsData);
+    console.log("Formatted dates to match:", formattedDates.map(d => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }));
+    
+    // Find today's data specifically for debugging
+    const todayDate = new Date();
+    const todayDateStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
+    const todayDataFromAggregation = paymentsData.find(item => item._id === todayDateStr);
+    console.log(`Today (${todayDateStr}) data from aggregation:`, todayDataFromAggregation);
+    
     // Fill in data or zeros for each day
     formattedDates.forEach(date => {
-      // Use ISO date format instead of formatted string
-      const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      // Use local date format consistently
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+      
       dates.push(formattedDate);
       
       const dayData = paymentsData.find(item => 
-        new Date(item.date).toDateString() === date.toDateString()
+        item._id === formattedDate
       );
+      
+      console.log(`Date ${formattedDate}: found data =`, dayData);
       
       earnings.push(dayData ? Number(dayData.totalAmount) : 0);
     });
@@ -448,8 +501,11 @@ const getDailyEarningsByRange = async (req, res, next) => {
     
     // Add this logging to debug
     console.log("Date range query:", {
+      rangeType,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
+      localStart: startDate.toLocaleString(),
+      localEnd: endDate.toLocaleString()
     });
     
     // For today's data, always do a fresh query to ensure we have the latest
@@ -457,6 +513,11 @@ const getDailyEarningsByRange = async (req, res, next) => {
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
+    
+    console.log("Today's date range for fresh query:", {
+      start: todayStart.toISOString(),
+      end: todayEnd.toISOString()
+    });
     
     const todayData = await Payment.aggregate([
       {
@@ -472,6 +533,8 @@ const getDailyEarningsByRange = async (req, res, next) => {
         }
       }
     ]);
+    
+    console.log("Fresh today data:", todayData);
     
     // If today is part of the date range, use the fresh data
     if (formattedDates.some(date => date.toDateString() === new Date().toDateString())) {

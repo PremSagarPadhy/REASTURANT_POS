@@ -22,15 +22,33 @@ const Payments = () => {
   });
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [percentageChange, setPercentageChange] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // Get today's date in local timezone
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   // Add date range state
-  const [dateRange, setDateRange] = useState({
-    startDate: new Date(new Date().setDate(new Date().getDate() - 7))
-      .toISOString()
-      .split("T")[0],
-    endDate: new Date().toISOString().split("T")[0],
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    const endDate = new Date(today);
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - 7);
+    
+    // Format dates in local timezone
+    const formatLocalDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    return {
+      startDate: formatLocalDate(startDate),
+      endDate: formatLocalDate(endDate),
+    };
   });
   const [isDateRangeActive, setIsDateRangeActive] = useState(false);
 
@@ -275,13 +293,19 @@ const Payments = () => {
         }
         
         // Make sure today's date is included and visible in the debug logs
-        const today = new Date().toISOString().split('T')[0];
+        const today = (() => {
+          const date = new Date();
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        })();
         console.log("Today's date mapping:", today, "->", directDateMap[today] || "not found");
         
         // Now calculate the date range we need to display
         let startDate, endDate;
         const todayDate = new Date();
-        todayDate.setHours(0, 0, 0, 0);
+        // Don't set hours to avoid timezone issues - work with date objects directly
         
         switch(range) {
           case "today":
@@ -314,6 +338,14 @@ const Payments = () => {
             endDate = new Date(todayDate);
         }
         
+        // Helper function to format date in local timezone
+        const formatLocalDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
         // Generate all dates in the range with correct formatting
         const sortedDates = [];
         const sortedDisplayDates = [];
@@ -324,8 +356,8 @@ const Payments = () => {
         
         // Loop through each date in the range
         while (currentDate <= endDate) {
-          // Format the date as YYYY-MM-DD for comparison with backend data
-          const dateStr = currentDate.toISOString().split('T')[0];
+          // Format the date as YYYY-MM-DD for comparison with backend data using local timezone
+          const dateStr = formatLocalDate(currentDate);
           
           // Format the date for display
           const displayDate = currentDate.toLocaleDateString('en-US', {
