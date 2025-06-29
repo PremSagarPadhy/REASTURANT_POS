@@ -8,9 +8,7 @@ import Chart from "react-apexcharts";
 // Import Framer Motion at the top of your file
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_URL = import.meta.env.PROD 
-  ? 'https://reasturant-pos-backend.onrender.com/api'
-  : 'http://localhost:8000/api';
+const API_URL = 'https://reasturant-pos-backend.onrender.com/api';
 
 const Payments = () => {
   const [payments, setPayments] = useState([]);
