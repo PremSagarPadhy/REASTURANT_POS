@@ -2,12 +2,12 @@
   "name": "pos-frontend",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
-  "scripts": {
+  "type": "module",  "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "vercel-build": "vite build"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.5.0",
