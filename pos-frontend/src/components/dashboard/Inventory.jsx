@@ -1620,6 +1620,7 @@ const Inventory = () => {
             </div>
           )}
         </div>
+        <div className="pb-12"></div>
       </div>
     </div>
   );

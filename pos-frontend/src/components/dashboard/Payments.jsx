@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { FaSearch } from "react-icons/fa";
 import { MdRefresh } from "react-icons/md";
@@ -81,16 +81,18 @@ const Payments = () => {
         animations: {
           enabled: true,
           easing: 'easeinout',
-          speed: 800,
+          speed: 200,
           animateGradually: {
-            enabled: true,
-            delay: 150
+            enabled: false
           },
           dynamicAnimation: {
             enabled: true,
-            speed: 350
+            speed: 150
           }
         },
+        redrawOnParentResize: true,
+        redrawOnWindowResize: true,
+        redrawOnVectorResize: true,
       },
       grid: {
         show: true,
@@ -116,9 +118,9 @@ const Payments = () => {
         type: "gradient",
         gradient: {
           shadeIntensity: 1,
-          opacityFrom: 0.45,
-          opacityTo: 0.05,
-          stops: [50, 100, 100, 100],
+          opacityFrom: 0.6,
+          opacityTo: 0.1,
+          stops: [0, 50, 100],
         },
       },
       xaxis: {
@@ -531,9 +533,138 @@ const Payments = () => {
 
   const dropdownRef = useRef(null);
   const hideTimeoutRef = useRef(null);
+  const chartRef1 = useRef(null);
+  const chartRef2 = useRef(null);
+  const resizeTimeoutRef = useRef(null);
+  const containerRef = useRef(null);
   
   // Add state to track if we should ignore the hide action
   const [isDropdownHovering, setIsDropdownHovering] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Add smooth resize handler for charts with slide animation
+  const handleChartResize = useCallback(() => {
+    // Clear any pending timeout
+    if (resizeTimeoutRef.current) {
+      clearTimeout(resizeTimeoutRef.current);
+    }
+    
+    setIsResizing(true);
+    
+    // Immediate resize for better responsiveness
+    const performResize = () => {
+      if (chartRef1.current?.chart) {
+        chartRef1.current.chart.windowResizeHandler();
+      }
+      if (chartRef2.current?.chart) {
+        chartRef2.current.chart.windowResizeHandler();
+      }
+    };
+    
+    // Immediate resize
+    performResize();
+    
+    // Additional delayed resize for safety with slide animation
+    resizeTimeoutRef.current = setTimeout(() => {
+      performResize();
+      setIsResizing(false);
+    }, 100);
+  }, []);
+
+  // Add resize observer effect with enhanced sidebar detection and slide animations
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver((entries) => {
+      // Add slide animation trigger
+      handleChartResize();
+    });
+    
+    const container = containerRef.current || document.querySelector('.container');
+    const sidebar = document.querySelector('[class*="sidebar"]') || 
+                   document.querySelector('nav') || 
+                   document.querySelector('aside') ||
+                   document.querySelector('[data-sidebar]');
+    
+    if (container) {
+      resizeObserver.observe(container);
+    }
+
+    // Enhanced MutationObserver for better sidebar detection
+    const bodyObserver = new MutationObserver((mutations) => {
+      let shouldResize = false;
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes') {
+          const attrName = mutation.attributeName;
+          if (attrName === 'class' || attrName === 'style' || attrName === 'data-sidebar-open') {
+            // Check if it's a sidebar-related class change
+            const element = mutation.target;
+            const classList = element.classList;
+            const hasNavClass = Array.from(classList).some(cls => 
+              cls.includes('sidebar') || 
+              cls.includes('nav') || 
+              cls.includes('collapsed') ||
+              cls.includes('expanded') ||
+              cls.includes('open') ||
+              cls.includes('closed')
+            );
+            
+            if (hasNavClass || element.tagName === 'BODY' || element.tagName === 'HTML') {
+              shouldResize = true;
+            }
+          }
+        }
+      });
+      
+      if (shouldResize) {
+        handleChartResize();
+      }
+    });
+
+    // Observe multiple elements for comprehensive sidebar detection
+    const elementsToObserve = [
+      document.body,
+      document.documentElement,
+      document.querySelector('main') || document.querySelector('.main-content'),
+      document.querySelector('[class*="app"]') || document.querySelector('#app'),
+      sidebar
+    ].filter(Boolean);
+    
+    elementsToObserve.forEach(element => {
+      if (element) {
+        bodyObserver.observe(element, { 
+          attributes: true, 
+          attributeFilter: ['class', 'style', 'data-sidebar-open', 'data-collapsed'],
+          subtree: false
+        });
+      }
+    });
+
+    // Enhanced window resize listener with immediate response
+    const handleWindowResize = () => {
+      handleChartResize();
+    };
+    
+    // Use multiple event types for better coverage
+    const resizeEvents = ['resize', 'orientationchange'];
+    resizeEvents.forEach(event => {
+      window.addEventListener(event, handleWindowResize, { passive: true });
+    });
+
+    return () => {
+      if (container) {
+        resizeObserver.unobserve(container);
+      }
+      resizeObserver.disconnect();
+      bodyObserver.disconnect();
+      
+      resizeEvents.forEach(event => {
+        window.removeEventListener(event, handleWindowResize);
+      });
+      
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+    };
+  }, [handleChartResize]);
 
   // Function to show dropdown
   const showDropdown = () => {
@@ -646,6 +777,18 @@ const Payments = () => {
       // Update the chart range state only
       setDailyEarningsRange(newRange);
       
+      // Add immediate smooth slide transition before fetching new data
+      if (chartRef1.current?.chart) {
+        chartRef1.current.chart.updateOptions({
+          chart: {
+            animations: {
+              enabled: true,
+              speed: 200
+            }
+          }
+        }, false, false);
+      }
+      
       // Fetch chart data for the new range
       await fetchDailyEarningsByRange(newRange);
     } catch (error) {
@@ -655,10 +798,71 @@ const Payments = () => {
   };
 
   return (
-    <div className="container mx-auto px-6 py-6 text-white">
-      <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <motion.div 
+      ref={containerRef}
+      className="container mx-auto px-4 sm:px-8 lg:px-[80px] py-6 text-white"
+      initial={{ opacity: 0, x: 50 }}
+      animate={{ 
+        opacity: 1, 
+        x: 0,
+        transition: {
+          type: "spring",
+          stiffness: 100,
+          damping: 20,
+          duration: 0.6
+        }
+      }}
+      style={{ 
+        minHeight: '100vh',
+        willChange: 'transform, opacity',
+        transform: 'translate3d(0,0,0)', // Force GPU acceleration
+        backfaceVisibility: 'hidden'
+      }}
+    >
+      <motion.div 
+        className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6"
+        initial={{ opacity: 0, x: 100 }}
+        animate={{ 
+          opacity: 1, 
+          x: 0,
+          transition: {
+            type: "spring",
+            stiffness: 120,
+            damping: 25,
+            delay: 0.1,
+            duration: 0.8
+          }
+        }}
+        style={{ 
+          willChange: 'transform, opacity',
+          transform: 'translate3d(0,0,0)',
+          backfaceVisibility: 'hidden'
+        }}
+      >
         {/* Daily Earnings Overview */}
-        <div className="bg-[#262626] p-5 rounded-lg shadow-lg">
+        <motion.div 
+          className="bg-[#262626] p-5 rounded-lg shadow-lg hover:shadow-xl"
+          initial={{ opacity: 0, x: -100 }}
+          animate={{ 
+            opacity: 1, 
+            x: 0,
+            transition: {
+              type: "spring",
+              stiffness: 100,
+              damping: 20,
+              delay: 0.2
+            }
+          }}
+          whileHover={{ 
+            scale: 1.02,
+            transition: { duration: 0.2 }
+          }}
+          style={{ 
+            willChange: 'transform, opacity, box-shadow',
+            transform: 'translate3d(0,0,0)',
+            backfaceVisibility: 'hidden'
+          }}
+        >
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-lg font-semibold">Daily Earnings</h3>
             {/* Remove refresh button */}
@@ -703,14 +907,44 @@ const Payments = () => {
 
           {/* Remove percentage change indicator section completely */}
 
-          <div className="h-36">
+          <motion.div 
+            className="h-36"
+            animate={{
+              x: isResizing ? [0, -10, 0] : 0,
+              transition: {
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                duration: 0.3
+              }
+            }}
+            style={{ 
+              willChange: 'transform',
+              transform: 'translate3d(0,0,0)',
+              backfaceVisibility: 'hidden'
+            }}
+          >
             {dailyEarningsChart.series[0].data.length > 0 ? (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ 
+                  opacity: 1, 
+                  x: 0,
+                  transition: {
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 25
+                  }
+                }}
+                className="h-full"
+                style={{ 
+                  willChange: 'transform, opacity',
+                  transform: 'translate3d(0,0,0)',
+                  backfaceVisibility: 'hidden'
+                }}
               >
                 <ReactApexChart
+                  ref={chartRef1}
                   options={{
                     chart: {
                       height: "100%",
@@ -723,16 +957,18 @@ const Payments = () => {
                       animations: {
                         enabled: true,
                         easing: 'easeinout',
-                        speed: 800,
+                        speed: 200,
                         animateGradually: {
-                          enabled: true,
-                          delay: 150
+                          enabled: false
                         },
                         dynamicAnimation: {
                           enabled: true,
-                          speed: 350
+                          speed: 150
                         }
                       },
+                      redrawOnParentResize: true,
+                      redrawOnWindowResize: true,
+                      redrawOnVectorResize: true,
                     },
                     colors: ["#3B82F6", "#22c55e"],
                     dataLabels: {
@@ -749,8 +985,8 @@ const Payments = () => {
                       type: "gradient",
                       gradient: {
                         shadeIntensity: 1,
-                        opacityFrom: 0.7,
-                        opacityTo: 0.2,
+                        opacityFrom: 0.8,
+                        opacityTo: 0.1,
                         stops: [0, 90, 100]
                       },
                     },
@@ -870,10 +1106,46 @@ const Payments = () => {
                       strokeColors: ["#ffffff"],
                       colors: ["#3B82F6"],
                       hover: {
-                        size: 7, // Show markers on hover with this size
-                        sizeOffset: 3
+                        size: 8, // Show markers on hover with this size
+                        sizeOffset: 4
                       }
-                    }
+                    },
+                    responsive: [{
+                      breakpoint: 768,
+                      options: {
+                        chart: {
+                          height: 120,
+                          animations: {
+                            enabled: true,
+                            speed: 150
+                          }
+                        },
+                        xaxis: {
+                          labels: {
+                            style: {
+                              fontSize: '8px'
+                            }
+                          }
+                        },
+                        yaxis: {
+                          labels: {
+                            style: {
+                              fontSize: '8px'
+                            }
+                          }
+                        }
+                      }
+                    }, {
+                      breakpoint: 1024,
+                      options: {
+                        chart: {
+                          animations: {
+                            enabled: true,
+                            speed: 150
+                          }
+                        }
+                      }
+                    }]
                   }}
                   series={dailyEarningsChart.series}
                   type="area"
@@ -886,12 +1158,17 @@ const Payments = () => {
                 className="flex h-full items-center justify-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
               >
-                <p className="text-gray-400 text-sm">Loading chart data...</p>
+                <div className="text-center">
+                  <div className="animate-pulse mb-2">
+                    <div className="h-4 bg-gray-600 rounded w-32 mx-auto"></div>
+                  </div>
+                  <p className="text-gray-400 text-sm">Loading chart data...</p>
+                </div>
               </motion.div>
             )}
-          </div>
+          </motion.div>
 
           <div className="mt-2 pt-3 border-t border-gray-700">
             <div className="relative" onMouseLeave={hideDropdown}>
@@ -987,10 +1264,32 @@ const Payments = () => {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Comparison chart component */}
-        <div className="bg-[#262626] p-5 rounded-lg shadow-lg">
+        <motion.div 
+          className="bg-[#262626] p-5 rounded-lg shadow-lg hover:shadow-xl"
+          initial={{ opacity: 0, x: 100 }}
+          animate={{ 
+            opacity: 1, 
+            x: 0,
+            transition: {
+              type: "spring",
+              stiffness: 100,
+              damping: 20,
+              delay: 0.3
+            }
+          }}
+          whileHover={{ 
+            scale: 1.02,
+            transition: { duration: 0.2 }
+          }}
+          style={{ 
+            willChange: 'transform, opacity, box-shadow',
+            transform: 'translate3d(0,0,0)',
+            backfaceVisibility: 'hidden'
+          }}
+        >
           {/* Daily comparison chart (Yesterday vs Today) */}
           <h3 className="text-lg font-semibold mb-3">Compared to Yesterday</h3>
           <div className="flex gap-4">
@@ -1014,8 +1313,25 @@ const Payments = () => {
             </div>
           </div>
 
-          <div className="mt-3">
+          <motion.div 
+            className="mt-3"
+            animate={{
+              x: isResizing ? [0, 10, 0] : 0,
+              transition: {
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                duration: 0.3
+              }
+            }}
+            style={{ 
+              willChange: 'transform',
+              transform: 'translate3d(0,0,0)',
+              backfaceVisibility: 'hidden'
+            }}
+          >
             <Chart
+              ref={chartRef2}
               options={{
                 chart: {
                   height: "100%",
@@ -1028,16 +1344,18 @@ const Payments = () => {
                   animations: {
                     enabled: true,
                     easing: 'easeinout',
-                    speed: 800,
+                    speed: 200,
                     animateGradually: {
-                      enabled: true,
-                      delay: 150
+                      enabled: false
                     },
                     dynamicAnimation: {
                       enabled: true,
-                      speed: 350
+                      speed: 150
                     }
                   },
+                  redrawOnParentResize: true,
+                  redrawOnWindowResize: true,
+                  redrawOnVectorResize: true,
                 },
                 colors: ["#3B82F6", "#7E3BF2"],
                 dataLabels: {
@@ -1167,7 +1485,47 @@ const Payments = () => {
                   labels: {
                     colors: '#9ca3af'
                   }
-                }
+                },
+                responsive: [{
+                  breakpoint: 768,
+                  options: {
+                    chart: {
+                      height: 140,
+                      animations: {
+                        enabled: true,
+                        speed: 150
+                      }
+                    },
+                    xaxis: {
+                      labels: {
+                        style: {
+                          fontSize: '8px'
+                        }
+                      }
+                    },
+                    yaxis: {
+                      labels: {
+                        style: {
+                          fontSize: '8px'
+                        }
+                      }
+                    },
+                    legend: {
+                      fontSize: '10px',
+                      position: 'bottom'
+                    }
+                  }
+                }, {
+                  breakpoint: 1024,
+                  options: {
+                    chart: {
+                      animations: {
+                        enabled: true,
+                        speed: 150
+                      }
+                    }
+                  }
+                }]
               }}
               series={[
                 {
@@ -1189,13 +1547,35 @@ const Payments = () => {
               height={180}
               width="100%"
             />
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
       
       
 
-      <div className="bg-[#262626] p-6 rounded-lg shadow-lg">
+      <motion.div 
+        className="bg-[#262626] p-6 rounded-lg shadow-lg hover:shadow-xl"
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ 
+          opacity: 1, 
+          y: 0,
+          transition: {
+            type: "spring",
+            stiffness: 100,
+            damping: 20,
+            delay: 0.4
+          }
+        }}
+        whileHover={{ 
+          scale: 1.01,
+          transition: { duration: 0.2 }
+        }}
+        style={{ 
+          willChange: 'transform, opacity, box-shadow',
+          transform: 'translate3d(0,0,0)',
+          backfaceVisibility: 'hidden'
+        }}
+      >
         <h3 className="text-xl font-semibold mb-4">Payments</h3>
         <div className="mb-4 flex flex-col md:flex-row gap-4">
           {/* Search input with icon */}
@@ -1348,8 +1728,8 @@ const Payments = () => {
             </table>
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

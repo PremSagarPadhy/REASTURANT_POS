@@ -36,6 +36,15 @@ export const createAdditionalItemsOrderRazorpay = (reqData) =>
   axiosWrapper.post("/api/payment/createAdditionalOrder", reqData);
 // Add missing payment endpoints
 export const getDailyEarnings = (date) => axiosWrapper.get(`/api/payment/daily-earnings?date=${date}`);
+export const getTotalEarnings = () => axiosWrapper.get('/api/payment/total-earnings');
+export const getPayments = () => axiosWrapper.get('/api/payment');
+export const getPaymentsByDate = (date) => axiosWrapper.get(`/api/payment?date=${date}`);
+export const getPaymentsByDateRange = (startDate, endDate) => axiosWrapper.get(`/api/payment/range?startDate=${startDate}&endDate=${endDate}`);
+export const getDailyEarningsRange = (range) => axiosWrapper.get(`/api/payment/daily-earnings-range?range=${range}`);
+export const getEarningsComparison = () => axiosWrapper.get('/api/payment/earnings-comparison');
+export const getRevenueChart = (period) => axiosWrapper.get(`/api/payment/revenue-chart?period=${period}`);
+export const getPaymentStats = () => axiosWrapper.get('/api/payment/stats');
+export const getPaymentSummary = (period) => axiosWrapper.get(`/api/payment/summary?period=${period}`);
 
 // Order Endpoints
 export const addOrder = (data) => axiosWrapper.post("/api/order/", data);

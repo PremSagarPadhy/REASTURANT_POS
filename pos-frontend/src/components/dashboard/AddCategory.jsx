@@ -135,7 +135,7 @@ const AddCategory = () => {
 
   return (
     <motion.div 
-      className="p-6 bg-[#1a1a1a] min-h-screen text-white"
+      className="p-6 bg-[#1a1a1a] min-h-screen text-white ml-[50px] mr-[50px]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

@@ -219,6 +219,7 @@ const ViewTable = () => {
               Loading tables...
             </motion.p>
           </div>
+          
         ) : (
           <AnimatePresence mode="wait">
             <motion.div 
@@ -298,6 +299,7 @@ const ViewTable = () => {
             </motion.div>
           </AnimatePresence>
         )}
+        <div className="pb-32"></div>
       </motion.div>
     </motion.section>
   );

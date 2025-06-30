@@ -103,7 +103,7 @@ const RecentOrders = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-[#262626] p-4 rounded-lg ml-[30px] mr-[30px] shadow-lg"
+      className="bg-[#262626] p-4 rounded-lg mx-[50px] shadow-lg"
       whileHover={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)" }}
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">

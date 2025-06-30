@@ -108,3 +108,13 @@ body {
 .overflow-hidden > .overflow-y-auto::-webkit-scrollbar {
   display: none;
 }
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

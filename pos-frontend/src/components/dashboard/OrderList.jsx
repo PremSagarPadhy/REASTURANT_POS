@@ -457,13 +457,13 @@ const OrderList = () => {
   ];
 
   return (
-    <div className="bg-[#1a1a1a] p-6 min-h-screen">
+    <div className="bg-[#1a1a1a] min-h-screen pl-6 pr-6 pt-6 pb-6">
       {/* Top Metrics Cards */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="container mx-auto py-2 px-6 md:px-4"
+        className="w-full max-w-none py-2 px-4"
       >
         <div className="flex justify-between items-center">
           <motion.div
@@ -564,7 +564,7 @@ const OrderList = () => {
       </motion.div>
 
       {/* Advanced Order Stats Card with Pie Chart */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 mx-[30px]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 px-4">
         <div className="md:col-span-1">
           <OrderStatsCard orderStats={orderStats} />
         </div>
@@ -813,7 +813,7 @@ const OrderList = () => {
           )}
         </motion.div>
       </div>
-      
+      <div className="pb-16"></div>
       {/* Footer with animation */}
       <motion.div
         initial={{ opacity: 0 }}

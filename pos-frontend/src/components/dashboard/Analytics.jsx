@@ -1,105 +1,1649 @@
-import React from "react";
-import { itemsData, metricsData } from "../../constants";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import Chart from "react-apexcharts";
+import ReactApexChart from "react-apexcharts";
+import {
+  getOrders,
+  getTables,
+  getInventoryItems,
+  getCategories,
+  getDailyEarnings
+} from "../../https";
+import RadialChart from "./RadialChart";
+import { metricsData, itemsData } from "../../constants";
 
 const Analytics = () => {
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState("last7days");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  
+  // Add new state variables for the integrated charts
+  const [dailyEarnings, setDailyEarnings] = useState({
+    todayEarnings: 0,
+    yesterdayEarnings: 0,
+  });
+  const [percentageChange, setPercentageChange] = useState(0);
+  const [dailyEarningsRange, setDailyEarningsRange] = useState("last7days");
+  const [dailyEarningsData, setDailyEarningsData] = useState({
+    labels: [],
+    displayLabels: [],
+    values: [],
+    percentageChange: 0,
+  });
+  const [integratedDailyEarningsChart, setIntegratedDailyEarningsChart] = useState({
+    series: [
+      {
+        name: "Daily Earnings",
+        data: [],
+        color: "#3B82F6",
+      },
+    ],
+    options: {
+      chart: {
+        height: 200,
+        type: "area",
+        fontFamily: "Inter, sans-serif",
+        sparkline: {
+          enabled: false,
+        },
+        toolbar: {
+          show: false,
+        },
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 800,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 350
+          }
+        },
+      },
+      grid: {
+        show: true,
+        strokeDashArray: 4,
+        padding: {
+          left: 16,
+          right: 16,
+          top: 0,
+        },
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      stroke: {
+        curve: "smooth",
+        width: 2,
+        colors: ['#3B82F6'],
+        hover: {
+          width: 3
+        }
+      },
+      fill: {
+        type: "gradient",
+        gradient: {
+          shadeIntensity: 1,
+          opacityFrom: 0.45,
+          opacityTo: 0.05,
+          stops: [50, 100, 100, 100],
+        },
+      },
+      xaxis: {
+        categories: [],
+        labels: {
+          show: false, 
+        },
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+      },
+      yaxis: {
+        labels: {
+          formatter: function (value) {
+            return "₹" + value.toFixed(0);
+          },
+          style: {
+            colors: "#1f1f1f",
+          },
+        },
+      },
+      tooltip: {
+        enabled: true,
+        custom: function({ series, seriesIndex, dataPointIndex, w }) {
+          const dateStr = w.globals.categoryLabels[dataPointIndex];
+          const value = series[seriesIndex][dataPointIndex];
+          const displayDate = dailyEarningsData.displayLabels[dataPointIndex];
+          let formattedDate;
+          
+          try {
+            const dateObj = new Date(dateStr);
+            
+            if (!isNaN(dateObj.getTime())) {
+              formattedDate = dateObj.toLocaleDateString('en-US', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              });
+            } else {
+              const currentYear = new Date().getFullYear();
+              formattedDate = `${displayDate}, ${currentYear}`;
+            }
+          } catch (e) {
+            const currentYear = new Date().getFullYear();
+            formattedDate = `${displayDate}, ${currentYear}`;
+          }
+          
+          return `
+            <div class="chart-tooltip py-2 px-3">
+              <div class="text-center text-gray-400 mb-2">${formattedDate}</div>
+              <div class="flex items-center">
+                <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                <span>Daily Earnings: ₹${value.toFixed(2)}</span>
+              </div>
+            </div>
+          `;
+        },
+        theme: "dark",
+        style: {
+          fontSize: '12px',
+          fontFamily: 'Inter, sans-serif'
+        },
+        background: {
+          color: '#1f2937',
+          borderRadius: 4,
+          opacity: 0.9,
+        },
+        fixed: {
+          enabled: false
+        },
+        x: {
+          show: false
+        },
+        y: {
+          title: {
+            formatter: function() {
+              return '';
+            }
+          },
+        },
+        marker: {
+          show: true
+        },
+        onDatasetHover: {
+          highlightDataSeries: true,
+        }
+      },
+    },
+  });
+
+  // Add dropdown refs for integrated charts
+  const dropdownRef = useRef(null);
+  const hideTimeoutRef = useRef(null);
+  const [isDropdownHovering, setIsDropdownHovering] = useState(false);
+
+  const [realtimeStats, setRealtimeStats] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    avgOrderValue: 0,
+    totalCustomers: 0,
+    totalTables: 0,
+    availableTables: 0,
+    bookedTables: 0,
+    totalCategories: 0,
+    totalItems: 0,
+    lowStockItems: 0,
+    todayRevenue: 0,
+    yesterdayRevenue: 0,
+    revenueGrowth: 0,
+  });
+  const [orderStats, setOrderStats] = useState({
+    inProgress: 0,
+    ready: 0,
+    completed: 0,
+    total: 0,
+  });
+  const [dailyEarningsChart, setDailyEarningsChart] = useState({
+    series: [{
+      name: "Daily Revenue",
+      data: [],
+      color: "#3B82F6",
+    }],
+    options: {
+      chart: {
+        height: 350,
+        type: "area",
+        fontFamily: "Inter, sans-serif",
+        toolbar: { show: false },
+        background: "transparent",
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 800,
+        },
+      },
+      theme: { mode: "dark" },
+      grid: {
+        show: true,
+        strokeDashArray: 4,
+        borderColor: '#4a4a4a',
+      },
+      dataLabels: { enabled: false },
+      stroke: {
+        curve: "smooth",
+        width: 3,
+        colors: ['#3B82F6'],
+      },
+      fill: {
+        type: "gradient",
+        gradient: {
+          shadeIntensity: 1,
+          opacityFrom: 0.45,
+          opacityTo: 0.05,
+          stops: [50, 100, 100, 100],
+        },
+      },
+      xaxis: {
+        categories: [],
+        labels: {
+          style: { colors: "#ababab" },
+        },
+        axisBorder: { color: "#4a4a4a" },
+      },
+      yaxis: {
+        labels: {
+          formatter: (value) => `₹${value.toLocaleString()}`,
+          style: { colors: "#ababab" },
+        },
+      },
+      tooltip: {
+        theme: "dark",
+        y: {
+          formatter: (value) => `₹${value.toLocaleString()}`,
+        },
+      },
+    },
+  });
+  const [orderStatusChart, setOrderStatusChart] = useState({
+    series: [],
+    options: {
+      chart: {
+        type: "donut",
+        height: 300,
+        background: "transparent",
+      },
+      theme: { mode: "dark" },
+      colors: ["#f6b100", "#02ca3a", "#025cca"],
+      labels: ["In Progress", "Ready", "Completed"],
+      legend: {
+        position: "bottom",
+        labels: { colors: "#f5f5f5" },
+      },
+      tooltip: {
+        theme: "dark",
+        y: {
+          formatter: (value) => `${value} orders`,
+        },
+      },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: "65%",
+            labels: {
+              show: true,
+              total: {
+                show: true,
+                label: "Total Orders",
+                color: "#f5f5f5",
+                formatter: () => orderStats.total,
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Fetch Orders
+  const { data: ordersData, isLoading: ordersLoading } = useQuery({
+    queryKey: ["orders"],
+    queryFn: getOrders,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  // Fetch Tables
+  const { data: tablesData, isLoading: tablesLoading } = useQuery({
+    queryKey: ["tables"],
+    queryFn: getTables,
+    refetchInterval: 30000,
+  });
+
+  // Fetch Categories
+  const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+    refetchInterval: 60000,
+  });
+
+  // Fetch Inventory with fallback
+  const { data: inventoryData, isLoading: inventoryLoading } = useQuery({
+    queryKey: ["inventory"],
+    queryFn: async () => {
+      try {
+        return await getInventoryItems();
+      } catch (error) {
+        console.log("Inventory API not available, using empty data");
+        return { data: [] };
+      }
+    },
+    refetchInterval: 60000,
+  });
+
+  // Create simple daily earnings chart data using existing API
+  const generateDailyEarningsChart = (orders, period) => {
+    const days = period === "last7days" ? 7 : period === "last30days" ? 30 : 90;
+    const today = new Date();
+    const chartData = [];
+    const labels = [];
+    const displayLabels = [];
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const dayOrders = orders.filter(order => 
+        new Date(order.createdAt).toISOString().split('T')[0] === dateStr
+      );
+      
+      const dayRevenue = dayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      
+      chartData.push(dayRevenue);
+      labels.push(dateStr);
+      displayLabels.push(date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      }));
+    }
+
+    return { values: chartData, labels, displayLabels };
+  };
+
+  // Add functions for integrated charts dropdown
+  const showDropdown = () => {
+    if (dropdownRef.current) {
+      dropdownRef.current.classList.remove("hidden");
+    }
+  };
+  
+  const hideDropdown = () => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+    }
+    
+    hideTimeoutRef.current = setTimeout(() => {
+      if (dropdownRef.current && !isDropdownHovering) {
+        dropdownRef.current.classList.add("hidden");
+      }
+    }, 300);
+  };
+
+  const cancelHideDropdown = () => {
+    setIsDropdownHovering(true);
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+    }
+  };
+
+  const allowHideDropdown = () => {
+    setIsDropdownHovering(false);
+    hideDropdown();
+  };
+
+  const handleRangeSelection = (range) => {
+    hideDropdown();
+    handleChartRangeChange(range);
+  };
+
+  const handleChartRangeChange = async (newRange) => {
+    try {
+      setDailyEarningsRange(newRange);
+      // Update integrated chart data based on existing orders data
+      if (ordersData?.data?.data) {
+        const chartData = generateDailyEarningsChart(ordersData.data.data, newRange);
+        setDailyEarningsData({
+          labels: chartData.labels,
+          displayLabels: chartData.displayLabels,
+          values: chartData.values,
+          percentageChange: 0,
+        });
+
+        setIntegratedDailyEarningsChart(prev => ({
+          ...prev,
+          series: [{
+            ...prev.series[0],
+            data: chartData.values,
+          }],
+          options: {
+            ...prev.options,
+            xaxis: {
+              ...prev.options.xaxis,
+              categories: chartData.labels,
+            },
+          },
+        }));
+      }
+    } catch (error) {
+      console.error("Error changing chart range:", error);
+    }
+  };
+
+  // Calculate real-time statistics
+  useEffect(() => {
+    if (ordersData?.data?.data && tablesData?.data?.data) {
+      const orders = ordersData.data.data;
+      const tables = tablesData.data.data;
+      const categories = categoriesData?.data?.data || [];
+      // Handle inventory data - it might be direct array or wrapped
+      const inventory = Array.isArray(inventoryData?.data) ? inventoryData.data : inventoryData?.data?.data || [];
+
+      // Calculate order statistics
+      const orderStatistics = orders.reduce(
+        (acc, order) => {
+          acc.total++;
+          if (order.orderStatus === "In Progress") acc.inProgress++;
+          else if (order.orderStatus === "Ready") acc.ready++;
+          else if (order.orderStatus === "Completed") acc.completed++;
+          return acc;
+        },
+        { inProgress: 0, ready: 0, completed: 0, total: 0 }
+      );
+
+      // Calculate revenue
+      const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+
+      // Calculate table statistics
+      const availableTables = tables.filter(table => table.status === "Available").length;
+      const bookedTables = tables.filter(table => table.status === "Booked").length;
+
+      // Calculate inventory statistics
+      const lowStockItems = inventory.filter(item => item.quantity <= item.minQuantity).length;
+
+      // Calculate today's and yesterday's revenue
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      
+      const todayOrders = orders.filter(order => 
+        new Date(order.createdAt).toISOString().split('T')[0] === today
+      );
+      const yesterdayOrders = orders.filter(order => 
+        new Date(order.createdAt).toISOString().split('T')[0] === yesterday
+      );
+
+      const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      const yesterdayRevenue = yesterdayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      const revenueGrowth = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
+
+      // Update integrated charts data
+      setDailyEarnings({
+        todayEarnings: todayRevenue,
+        yesterdayEarnings: yesterdayRevenue,
+      });
+      setPercentageChange(revenueGrowth);
+
+      // Update integrated daily earnings chart
+      const integratedChartData = generateDailyEarningsChart(orders, dailyEarningsRange);
+      setDailyEarningsData({
+        labels: integratedChartData.labels,
+        displayLabels: integratedChartData.displayLabels,
+        values: integratedChartData.values,
+        percentageChange: revenueGrowth,
+      });
+
+      setIntegratedDailyEarningsChart(prev => ({
+        ...prev,
+        series: [{
+          ...prev.series[0],
+          data: integratedChartData.values,
+        }],
+        options: {
+          ...prev.options,
+          xaxis: {
+            ...prev.options.xaxis,
+            categories: integratedChartData.labels,
+          },
+        },
+      }));
+
+      // Count total menu items
+      const totalItems = categories.reduce((sum, category) => sum + (category.items?.length || 0), 0);
+
+      setRealtimeStats({
+        totalRevenue,
+        totalOrders: orders.length,
+        avgOrderValue,
+        totalCustomers: new Set(orders.map(order => order.customerDetails?.name).filter(Boolean)).size,
+        totalTables: tables.length,
+        availableTables,
+        bookedTables,
+        totalCategories: categories.length,
+        totalItems,
+        lowStockItems,
+        todayRevenue,
+        yesterdayRevenue,
+        revenueGrowth,
+      });
+
+      setOrderStats(orderStatistics);
+      setOrderStatusChart(prev => ({
+        ...prev,
+        series: [orderStatistics.inProgress, orderStatistics.ready, orderStatistics.completed],
+      }));
+
+      // Update daily earnings chart with calculated data
+      const originalChartData = generateDailyEarningsChart(orders, selectedTimePeriod);
+      setDailyEarningsChart(prev => ({
+        ...prev,
+        series: [{
+          ...prev.series[0],
+          data: originalChartData.values,
+        }],
+        options: {
+          ...prev.options,
+          xaxis: {
+            ...prev.options.xaxis,
+            categories: originalChartData.displayLabels,
+          },
+        },
+      }));
+    }
+  }, [ordersData, tablesData, categoriesData, inventoryData, selectedTimePeriod]);
+
+  const timePeriods = [
+    { value: "last7days", label: "Last 7 Days" },
+    { value: "last30days", label: "Last 30 Days" },
+    { value: "last3months", label: "Last 3 Months" },
+    { value: "last6months", label: "Last 6 Months" },
+  ];
+
+  const isLoading = ordersLoading || tablesLoading;
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-2 px-6 md:px-4">
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#025cca]"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto py-2 px-6 md:px-4">
-      <div className="flex justify-between items-center">
+    <div className="min-h-screen overflow-y-auto scrollbar-hide">
+      <div className="container mx-auto py-6 px-12 lg:px-10 space-y-6 pb-12">
+      {/* Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex justify-between items-center"
+      >
         <div>
           <h2 className="font-semibold text-[#f5f5f5] text-xl">
-            Overall Performance
+            Restaurant Analytics Dashboard
           </h2>
           <p className="text-sm text-[#ababab]">
-            Lorem, ipsum dolor sit amet consectetur adipisicing elit.
-            Distinctio, obcaecati?
+            Real-time insights into your restaurant's performance and operations
           </p>
         </div>
-        <button className="flex items-center gap-1 px-4 py-2 rounded-md text-[#f5f5f5] bg-[#1a1a1a]">
-          Last 1 Month
-          <svg
-            className="w-3 h-3"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="4"
+        <div className="relative">
+          <button 
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center gap-1 px-4 py-2 rounded-md text-[#f5f5f5] bg-[#1a1a1a] border border-[#4a4a4a] hover:bg-[#2a2a2a] transition-colors"
           >
-            <path d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="mt-6 grid grid-cols-4 gap-4">
-        {metricsData.map((metric, index) => {
-          return (
-            <div
-              key={index}
-              className="shadow-sm rounded-lg p-4"
-              style={{ backgroundColor: metric.color }}
+            {timePeriods.find(p => p.value === selectedTimePeriod)?.label}
+            <svg
+              className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="4"
             >
-              <div className="flex justify-between items-center">
-                <p className="font-medium text-xs text-[#f5f5f5]">
-                  {metric.title}
-                </p>
-                <div className="flex items-center gap-1">
-                  <svg
-                    className="w-3 h-3"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                    style={{ color: metric.isIncrease ? "#f5f5f5" : "red" }}
+              <path d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <AnimatePresence>
+            {isDropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-12 right-0 bg-[#333] border border-[#4a4a4a] rounded-md shadow-lg z-10 min-w-[150px]"
+              >
+                {timePeriods.map((period) => (
+                  <button
+                    key={period.value}
+                    onClick={() => {
+                      setSelectedTimePeriod(period.value);
+                      setIsDropdownOpen(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-[#f5f5f5] hover:bg-[#4a4a4a] first:rounded-t-md last:rounded-b-md"
                   >
-                    <path
-                      d={metric.isIncrease ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
-                    />
-                  </svg>
-                  <p
-                    className="font-medium text-xs"
-                    style={{ color: metric.isIncrease ? "#f5f5f5" : "red" }}
-                  >
-                    {metric.percentage}
-                  </p>
-                </div>
-              </div>
-              <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">
-                {metric.value}
+                    {period.label}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>        {/* Main Metrics - Using existing design pattern */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-4 gap-4"
+        >
+        <div className="bg-[#025cca] rounded-lg p-4 shadow-sm">
+          <div className="flex justify-between items-center">
+            <p className="font-medium text-xs text-[#f5f5f5]">Total Revenue</p>
+            <div className="flex items-center gap-1">
+              <svg
+                className="w-3 h-3"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+                style={{ color: realtimeStats.revenueGrowth >= 0 ? "#f5f5f5" : "red" }}
+              >
+                <path d={realtimeStats.revenueGrowth >= 0 ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+              </svg>
+              <p className="font-medium text-xs text-[#f5f5f5]">
+                {Math.abs(realtimeStats.revenueGrowth).toFixed(1)}%
               </p>
             </div>
-          );
-        })}
-      </div>
-
-      <div className="flex flex-col justify-between mt-12">
-        <div>
-          <h2 className="font-semibold text-[#f5f5f5] text-xl">
-            Item Details
-          </h2>
-          <p className="text-sm text-[#ababab]">
-            Lorem, ipsum dolor sit amet consectetur adipisicing elit.
-            Distinctio, obcaecati?
+          </div>
+          <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">
+            ₹{realtimeStats.totalRevenue.toLocaleString()}
           </p>
         </div>
 
-        <div className="mt-6 grid grid-cols-4 gap-4">
-
-            {
-                itemsData.map((item, index) => {
-                    return (
-                        <div key={index} className="shadow-sm rounded-lg p-4" style={{ backgroundColor: item.color }}>
-                        <div className="flex justify-between items-center">
-                          <p className="font-medium text-xs text-[#f5f5f5]">{item.title}</p>
-                          <div className="flex items-center gap-1">
-                            <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4" fill="none">
-                              <path d="M5 15l7-7 7 7" />
-                            </svg>
-                            <p className="font-medium text-xs text-[#f5f5f5]">{item.percentage}</p>
-                          </div>
-                        </div>
-                        <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">{item.value}</p>
-                      </div>
-                    )
-                })
-            }
+        <div className="bg-[#02ca3a] rounded-lg p-4 shadow-sm">
+          <div className="flex justify-between items-center">
+            <p className="font-medium text-xs text-[#f5f5f5]">Total Orders</p>
+            <div className="flex items-center gap-1">
+              <svg className="w-3 h-3 text-[#f5f5f5]" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                <path d="M5 15l7-7 7 7" />
+              </svg>
+              <p className="font-medium text-xs text-[#f5f5f5]">Live</p>
+            </div>
+          </div>
+          <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">
+            {realtimeStats.totalOrders}
+          </p>
         </div>
+
+        <div className="bg-[#f6b100] rounded-lg p-4 shadow-sm">
+          <div className="flex justify-between items-center">
+            <p className="font-medium text-xs text-[#f5f5f5]">Avg Order Value</p>
+            <div className="flex items-center gap-1">
+              <svg className="w-3 h-3 text-[#f5f5f5]" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                <path d="M5 15l7-7 7 7" />
+              </svg>
+              <p className="font-medium text-xs text-[#f5f5f5]">Live</p>
+            </div>
+          </div>
+          <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">
+            ₹{realtimeStats.avgOrderValue.toFixed(0)}
+          </p>
+        </div>
+
+        <div className="bg-[#be3e3f] rounded-lg p-4 shadow-sm">
+          <div className="flex justify-between items-center">
+            <p className="font-medium text-xs text-[#f5f5f5]">Active Customers</p>
+            <div className="flex items-center gap-1">
+              <svg className="w-3 h-3 text-[#f5f5f5]" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                <path d="M5 15l7-7 7 7" />
+              </svg>
+              <p className="font-medium text-xs text-[#f5f5f5]">Live</p>
+            </div>
+          </div>
+          <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">
+            {realtimeStats.totalCustomers}
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Order Progress Chart */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="bg-[#262626] rounded-lg p-4 md:p-6"
+          whileHover={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)" }}
+        >
+          <motion.div 
+            initial={{ x: -10, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="flex justify-between mb-3"
+          >
+            <div className="flex items-center">
+              <div className="flex justify-center items-center">
+                <h5 className="text-xl font-bold leading-none text-[#f5f5f5] pe-1">Order Progress</h5>
+                <motion.svg 
+                  whileHover={{ scale: 1.2, rotate: 15 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="w-3.5 h-3.5 text-[#ababab] hover:text-[#f5f5f5] cursor-pointer ms-1" 
+                  aria-hidden="true" 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm0 16a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm1-5.034V12a1 1 0 0 1-2 0v-1.418a1 1 0 0 1 1.038-.999 1.436 1.436 0 0 0 1.488-1.441 1.501 1.501 0 1 0-3-.116.986.986 0 0 1-1.037.961 1 1 0 0 1-.96-1.037A3.5 3.5 0 1 1 11 11.466Z"/>
+                </motion.svg>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-[#1f1f1f] p-3 rounded-lg"
+            whileHover={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}
+          >
+            <div className="grid grid-cols-3 gap-3 mb-2">
+              <motion.dl 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[78px]"
+                whileHover={{ scale: 1.05, backgroundColor: "#3d3d3d" }}
+              >
+                <dt className="w-8 h-8 rounded-full bg-[#f6b100] bg-opacity-20 text-[#f6b100] text-sm font-medium flex items-center justify-center mb-1">
+                  {orderStats.inProgress}
+                </dt>
+                <dd className="text-[#f6b100] text-sm font-medium">In Progress</dd>
+              </motion.dl>
+              
+              <motion.dl 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[78px]"
+                whileHover={{ scale: 1.05, backgroundColor: "#3d3d3d" }}
+              >
+                <dt className="w-8 h-8 rounded-full bg-[#02ca3a] bg-opacity-20 text-[#02ca3a] text-sm font-medium flex items-center justify-center mb-1">
+                  {orderStats.ready}
+                </dt>
+                <dd className="text-[#02ca3a] text-sm font-medium">Ready</dd>
+              </motion.dl>
+              
+              <motion.dl 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[78px]"
+                whileHover={{ scale: 1.05, backgroundColor: "#3d3d3d" }}
+              >
+                <dt className="w-8 h-8 rounded-full bg-[#025cca] bg-opacity-20 text-[#025cca] text-sm font-medium flex items-center justify-center mb-1">
+                  {orderStats.completed}
+                </dt>
+                <dd className="text-[#025cca] text-sm font-medium">Completed</dd>
+              </motion.dl>
+            </div>
+
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowDetails(!showDetails)}
+              type="button" 
+              className="hover:underline text-xs text-[#ababab] font-medium inline-flex items-center"
+            >
+              {showDetails ? "Hide details" : "Show more details"}
+              <svg className={`w-2 h-2 ms-1 transition-transform duration-300 ${showDetails ? "rotate-180" : ""}`} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4"/>
+              </svg>
+            </motion.button>
+            
+            <AnimatePresence>
+              {showDetails && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="border-[#4a4a4a] border-t pt-3 mt-3 space-y-2 overflow-hidden"
+                >
+                  <motion.dl 
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                    className="flex items-center justify-between"
+                  >
+                    <dt className="text-[#ababab] text-sm font-normal">Order completion rate:</dt>
+                    <dd className="bg-[#02ca3a] bg-opacity-20 text-[#02ca3a] text-xs font-medium inline-flex items-center px-2.5 py-1 rounded-md">
+                      <svg className="w-2.5 h-2.5 me-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 14">
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13V1m0 0L1 5m4-4 4 4"/>
+                      </svg> 
+                      {Math.round((orderStats.completed / (orderStats.total || 1)) * 100)}%
+                    </dd>
+                  </motion.dl>
+                  <motion.dl 
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                    className="flex items-center justify-between"
+                  >
+                    <dt className="text-[#ababab] text-sm font-normal">Average processing time:</dt>
+                    <dd className="bg-[#333] text-[#f5f5f5] text-xs font-medium inline-flex items-center px-2.5 py-1 rounded-md">
+                      24 minutes
+                    </dd>
+                  </motion.dl>
+                  <motion.dl 
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.3 }}
+                    className="flex items-center justify-between"
+                  >
+                    <dt className="text-[#ababab] text-sm font-normal">Busiest time:</dt>
+                    <dd className="bg-[#333] text-[#f5f5f5] text-xs font-medium inline-flex items-center px-2.5 py-1 rounded-md">
+                      12:00 - 14:00
+                    </dd>
+                  </motion.dl>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="py-3 h-54" 
+          >
+            <RadialChart orderStats={orderStats} />
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            className="grid grid-cols-1 items-center border-t border-[#4a4a4a] justify-between"
+          >
+            <div className="flex justify-between items-center pt-5">
+              <motion.select 
+                className="text-sm font-medium text-[#f5f5f5] bg-[#333] hover:bg-[#3d3d3d] rounded-md px-3 py-1 border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#025cca] cursor-pointer"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <option value="7" className="bg-[#333] text-[#f5f5f5]">Last 7 days</option>
+                <option value="1" className="bg-[#333] text-[#f5f5f5]">Yesterday</option>
+                <option value="0" className="bg-[#333] text-[#f5f5f5]">Today</option>
+                <option value="30" className="bg-[#333] text-[#f5f5f5]">Last 30 days</option>
+                <option value="90" className="bg-[#333] text-[#f5f5f5]">Last 90 days</option>
+              </motion.select>
+              
+              <motion.a
+                whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                whileTap={{ scale: 0.95 }}
+                href="#"
+                className="uppercase text-sm font-semibold inline-flex items-center rounded-lg text-[#025cca] hover:text-[#0273fa] px-3 py-2"
+              >
+                Detailed report
+                <svg className="w-2.5 h-2.5 ms-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
+                </svg>
+              </motion.a>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* CSAT Table */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="bg-[#262626] rounded-lg p-4 md:p-6"
+          whileHover={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)" }}
+        >
+          <motion.div 
+            initial={{ x: -10, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="flex justify-between mb-3"
+          >
+            <div className="flex items-center">
+              <div className="flex justify-center items-center">
+                <h5 className="text-xl font-bold leading-none text-[#f5f5f5] pe-1">Customer Satisfaction</h5>
+                <motion.svg 
+                  whileHover={{ scale: 1.2, rotate: 15 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="w-3.5 h-3.5 text-[#ababab] hover:text-[#f5f5f5] cursor-pointer ms-1" 
+                  aria-hidden="true" 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm0 16a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm1-5.034V12a1 1 0 0 1-2 0v-1.418a1 1 0 0 1 1.038-.999 1.436 1.436 0 0 0 1.488-1.441 1.501 1.501 0 1 0-3-.116.986.986 0 0 1-1.037.961 1 1 0 0 1-.96-1.037A3.5 3.5 0 1 1 11 11.466Z"/>
+                </motion.svg>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* CSAT Summary Cards */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="bg-[#1f1f1f] p-3 rounded-lg mb-4"
+            whileHover={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}
+          >
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="bg-[#333] rounded-lg p-3 text-center"
+                whileHover={{ scale: 1.02, backgroundColor: "#3d3d3d" }}
+              >
+                <div className="text-2xl font-bold text-[#02ca3a] mb-1">4.6</div>
+                <div className="text-xs text-[#ababab]">Overall Rating</div>
+                <div className="flex justify-center mt-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <svg key={star} className={`w-3 h-3 ${star <= 4 ? 'text-[#f6b100]' : 'text-[#4a4a4a]'}`} fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                  ))}
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="bg-[#333] rounded-lg p-3 text-center"
+                whileHover={{ scale: 1.02, backgroundColor: "#3d3d3d" }}
+              >
+                <div className="text-2xl font-bold text-[#025cca] mb-1">156</div>
+                <div className="text-xs text-[#ababab]">Total Reviews</div>
+                <div className="text-xs text-[#02ca3a] mt-1">↗ +12 this week</div>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* CSAT Reviews Table */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="bg-[#1f1f1f] rounded-lg overflow-hidden"
+          >
+            <div className="px-4 py-3 border-b border-[#4a4a4a]">
+              <h6 className="text-sm font-semibold text-[#f5f5f5]">Recent Reviews</h6>
+            </div>
+
+            <div className="max-h-48 overflow-y-auto">
+              {[
+                { 
+                  id: 1, 
+                  customer: "John Smith", 
+                  rating: 5, 
+                  comment: "Excellent service and delicious food!", 
+                  date: "2 hours ago",
+                  order: "#1245"
+                },
+                { 
+                  id: 2, 
+                  customer: "Emma Wilson", 
+                  rating: 4, 
+                  comment: "Great atmosphere, food was good but took a while.", 
+                  date: "5 hours ago",
+                  order: "#1238"
+                },
+                { 
+                  id: 3, 
+                  customer: "Michael Davis", 
+                  rating: 5, 
+                  comment: "Perfect dining experience. Will come back!", 
+                  date: "1 day ago",
+                  order: "#1229"
+                },
+                { 
+                  id: 4, 
+                  customer: "Sarah Johnson", 
+                  rating: 3, 
+                  comment: "Food was okay, service could be improved.", 
+                  date: "1 day ago",
+                  order: "#1225"
+                },
+                { 
+                  id: 5, 
+                  customer: "David Brown", 
+                  rating: 4, 
+                  comment: "Nice place, good value for money.", 
+                  date: "2 days ago",
+                  order: "#1218"
+                },
+                { 
+                  id: 6, 
+                  customer: "Lisa Garcia", 
+                  rating: 5, 
+                  comment: "Amazing pasta and friendly staff!", 
+                  date: "2 days ago",
+                  order: "#1215"
+                }
+              ].map((review, index) => (
+                <motion.div 
+                  key={review.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  className="px-3 py-2 border-b border-[#333] hover:bg-[#2a2a2a] transition-colors"
+                  whileHover={{ backgroundColor: "#2a2a2a" }}
+                >
+                  <div className="flex items-start justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-[#025cca] flex items-center justify-center text-xs font-medium text-white">
+                        {review.customer.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-[#f5f5f5]">{review.customer}</div>
+                        <div className="text-xs text-[#ababab]">Order {review.order}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center gap-1 mb-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <svg key={star} className={`w-2.5 h-2.5 ${star <= review.rating ? 'text-[#f6b100]' : 'text-[#4a4a4a]'}`} fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                          </svg>
+                        ))}
+                      </div>
+                      <div className="text-xs text-[#ababab]">{review.date}</div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-[#f5f5f5] leading-relaxed">{review.comment}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* CSAT Footer */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            className="flex justify-between items-center pt-4 border-t border-[#4a4a4a] mt-4"
+          >
+            <motion.select 
+              className="text-sm font-medium text-[#f5f5f5] bg-[#333] hover:bg-[#3d3d3d] rounded-md px-3 py-1 border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#025cca] cursor-pointer"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <option value="7" className="bg-[#333] text-[#f5f5f5]">Last 7 days</option>
+              <option value="30" className="bg-[#333] text-[#f5f5f5]">Last 30 days</option>
+              <option value="90" className="bg-[#333] text-[#f5f5f5]">Last 90 days</option>
+            </motion.select>
+            
+            <motion.a
+              whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+              whileTap={{ scale: 0.95 }}
+              href="#"
+              className="uppercase text-sm font-semibold inline-flex items-center rounded-lg text-[#025cca] hover:text-[#0273fa] px-3 py-2"
+            >
+              View all reviews
+              <svg className="w-2.5 h-2.5 ms-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
+              </svg>
+            </motion.a>
+          </motion.div>
+        </motion.div>
+      </div>        {/* Integrated Charts from Payments */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Daily Earnings Overview */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-[#262626] p-5 rounded-lg shadow-lg"
+        >
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-semibold text-[#f5f5f5]">Daily Earnings</h3>
+          </div>
+          
+          <div className="flex gap-4 mb-4">
+            <div className="flex-1 bg-[#1a1a1a] p-3 rounded-lg shadow-md">
+              <h4 className="text-sm font-semibold mb-1 text-[#f5f5f5]">Current Period</h4>
+              <p className="text-2xl font-bold text-blue-400">
+                ₹{dailyEarningsData.values && dailyEarningsData.values.length > 0 
+                  ? dailyEarningsData.values.reduce((sum, val) => sum + val, 0).toFixed(2)
+                  : "0.00"}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {dailyEarningsRange === "last7days"
+                  ? "Last 7 days"
+                  : dailyEarningsRange === "yesterday"
+                  ? "Yesterday"
+                  : dailyEarningsRange === "today"
+                  ? "Today"
+                  : dailyEarningsRange === "last30days"
+                  ? "Last 30 days"
+                  : "Last 90 days"}
+              </p>
+            </div>
+            <div className="flex-1 bg-[#1a1a1a] p-3 rounded-lg shadow-md">
+              <h4 className="text-sm font-semibold mb-1 text-[#f5f5f5]">Average Daily</h4>
+              <p className="text-2xl font-bold text-purple-400">
+                ₹{dailyEarningsData.values && dailyEarningsData.values.length > 0 
+                  ? (dailyEarningsData.values.reduce((sum, val) => sum + val, 0) / dailyEarningsData.values.length).toFixed(2) 
+                  : "0.00"}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                <span className={dailyEarningsData.percentageChange >= 0 ? "text-green-500" : "text-red-500"}>
+                  {dailyEarningsData.percentageChange >= 0 ? "▲" : "▼"} {Math.abs(dailyEarningsData.percentageChange).toFixed(2)}%
+                </span> {' '}
+                trend
+              </p>
+            </div>
+          </div>
+
+          <div className="h-36">
+            {integratedDailyEarningsChart.series[0].data.length > 0 ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <ReactApexChart
+                  options={{
+                    chart: {
+                      height: "100%",
+                      width: "100%",
+                      type: "area",
+                      fontFamily: "Inter, sans-serif",
+                      toolbar: {
+                        show: false,
+                      },
+                      animations: {
+                        enabled: true,
+                        easing: 'easeinout',
+                        speed: 800,
+                        animateGradually: {
+                          enabled: true,
+                          delay: 150
+                        },
+                        dynamicAnimation: {
+                          enabled: true,
+                          speed: 350
+                        }
+                      },
+                    },
+                    colors: ["#3B82F6", "#22c55e"],
+                    dataLabels: {
+                      enabled: false,
+                    },
+                    stroke: {
+                      curve: "smooth",
+                      width: 3,
+                      hover: {
+                        width: 4 
+                      }
+                    },
+                    fill: {
+                      type: "gradient",
+                      gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.2,
+                        stops: [0, 90, 100]
+                      },
+                    },
+                    grid: { 
+                      show: true,
+                      borderColor: '#333',
+                      strokeDashArray: 2,
+                      position: 'back',
+                      xaxis: {
+                        lines: { show: false }
+                      },
+                      yaxis: {
+                        lines: { show: true }
+                      },
+                      padding: {
+                        left: 10,
+                        right: 10,
+                        top: 0,
+                        bottom: 0
+                      }
+                    },
+                    xaxis: { 
+                      categories: integratedDailyEarningsChart.options.xaxis.categories,
+                      labels: { 
+                        show: true,
+                        style: {
+                          colors: '#9ca3af',
+                          fontSize: '10px',
+                        },
+                        formatter: function(value) {
+                          const idx = dailyEarningsData.labels.indexOf(value);
+                          return idx >= 0 ? dailyEarningsData.displayLabels[idx] : '';
+                        },
+                        offsetY: 5,
+                      },
+                      axisBorder: {
+                        show: false,
+                      },
+                      axisTicks: {
+                        show: false,
+                      }
+                    },
+                    yaxis: { 
+                      show: true,
+                      min: function(min) { return min * 0.85; },
+                      labels: { 
+                        show: true,
+                        formatter: function(value) {
+                          return '₹' + value.toFixed(0);
+                        },
+                        style: {
+                          colors: "#9ca3af",
+                          fontSize: '10px',
+                        }
+                      },
+                      tickAmount: 4,
+                    },
+                    tooltip: {
+                      enabled: true,
+                      custom: function({ series, seriesIndex, dataPointIndex, w }) {
+                        const dateStr = w.globals.categoryLabels[dataPointIndex];
+                        const value = series[seriesIndex][dataPointIndex];
+                        const displayDate = dailyEarningsData.displayLabels[dataPointIndex];
+                        
+                        const currentYear = new Date().getFullYear();
+                        const formattedDate = `${displayDate}, ${currentYear}`;
+                        
+                        return `
+                          <div class="chart-tooltip py-2 px-3">
+                            <div class="text-center text-gray-400 mb-2">${formattedDate}</div>
+                            <div class="flex items-center">
+                              <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                              <span>Daily Earnings: ₹${value.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        `;
+                      },
+                      theme: "dark",
+                      style: {
+                        fontSize: '12px',
+                        fontFamily: 'Inter, sans-serif'
+                      },
+                      background: {
+                        color: '#1f2937',
+                        borderRadius: 4,
+                        opacity: 0.9,
+                      },
+                      fixed: {
+                        enabled: false
+                      },
+                      marker: {
+                        show: true
+                      },
+                      onDatasetHover: {
+                        highlightDataSeries: true,
+                      }
+                    },
+                    states: {
+                      hover: {
+                        filter: {
+                          type: 'lighten',
+                          value: 0.1,
+                        }
+                      },
+                      active: {
+                        filter: {
+                          type: 'darken',
+                          value: 0.2,
+                        }
+                      }
+                    },
+                    markers: {
+                      size: 0,
+                      strokeWidth: 2,
+                      fillOpacity: 1,
+                      strokeOpacity: 1,
+                      strokeColors: ["#ffffff"],
+                      colors: ["#3B82F6"],
+                      hover: {
+                        size: 7,
+                        sizeOffset: 3
+                      }
+                    }
+                  }}
+                  series={integratedDailyEarningsChart.series}
+                  type="area"
+                  height="95%"
+                  width="100%"
+                />
+              </motion.div>
+            ) : (
+              <motion.div 
+                className="flex h-full items-center justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <p className="text-gray-400 text-sm">Loading chart data...</p>
+              </motion.div>
+            )}
+          </div>
+
+          <div className="mt-2 pt-3 border-t border-gray-700">
+            <div className="relative" onMouseLeave={hideDropdown}>
+              <button
+                id="timeRangeDropdown"
+                onClick={() => {
+                  if (dropdownRef.current?.classList.contains("hidden")) {
+                    showDropdown();
+                  } else {
+                    hideDropdown();
+                  }
+                }}
+                className="text-xs font-medium text-gray-400 hover:text-white text-center inline-flex items-center"
+                type="button"
+              >
+                {dailyEarningsRange === "last7days"
+                  ? "Last 7 days"
+                  : dailyEarningsRange === "yesterday"
+                  ? "Yesterday"
+                  : dailyEarningsRange === "today"
+                  ? "Today"
+                  : dailyEarningsRange === "last30days"
+                  ? "Last 30 days"
+                  : dailyEarningsRange === "last90days"
+                  ? "Last 90 days"
+                  : "Custom Range"}
+                <svg
+                  className="w-2 m-2 ms-1"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 10 6"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="m1 1 4 4 4-4"
+                  />
+                </svg>
+              </button>
+              <div
+                id="timeRangeOptions"
+                ref={dropdownRef}
+                onMouseEnter={cancelHideDropdown}
+                onMouseLeave={allowHideDropdown}
+                className="hidden absolute z-10 bg-[#1a1a1a] divide-y divide-gray-700 rounded-lg shadow-lg w-44 mt-1"
+              >
+                <ul className="py-2 text-sm text-gray-200">
+                  <li>
+                    <button
+                      onClick={() => handleRangeSelection("yesterday")}
+                      className="block w-full text-left px-4 py-2 hover:bg-[#262626]"
+                    >
+                      Yesterday
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => handleRangeSelection("today")}
+                      className="block w-full text-left px-4 py-2 hover:bg-[#262626]"
+                    >
+                      Today
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => handleRangeSelection("last7days")}
+                      className="block w-full text-left px-4 py-2 hover:bg-[#262626]"
+                    >
+                      Last 7 days
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => handleRangeSelection("last30days")}
+                      className="block w-full text-left px-4 py-2 hover:bg-[#262626]"
+                    >
+                      Last 30 days
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => handleRangeSelection("last90days")}
+                      className="block w-full text-left px-4 py-2 hover:bg-[#262626]"
+                    >
+                      Last 90 days
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Comparison chart component */}
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-[#262626] p-5 rounded-lg shadow-lg"
+        >
+          <h3 className="text-lg font-semibold mb-3 text-[#f5f5f5]">Compared to Yesterday</h3>
+          <div className="flex gap-4">
+            <div className="flex-1 bg-[#1a1a1a] p-3 rounded-lg shadow-md">
+              <h4 className="text-sm font-semibold mb-1 text-[#f5f5f5]">Today's Earnings</h4>
+              <p className="text-2xl font-bold text-green-400">
+                ₹{dailyEarnings.todayEarnings.toFixed(2)}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {percentageChange.toFixed(2) >= 0
+                  ? "▲"
+                  : "▼"}{" "}
+                {percentageChange.toFixed(2)}% compared to yesterday
+              </p>
+            </div>
+            <div className="flex-1 bg-[#1a1a1a] p-3 rounded-lg shadow-md">
+              <h4 className="text-sm font-semibold mb-1 text-[#f5f5f5]">Yesterday's Earnings</h4>
+              <p className="text-2xl font-bold text-red-400">
+                ₹{dailyEarnings.yesterdayEarnings.toFixed(2)}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <Chart
+              options={{
+                chart: {
+                  height: "100%",
+                  width: "100%",
+                  type: "area",
+                  fontFamily: "Inter, sans-serif",
+                  toolbar: {
+                    show: false,
+                  },
+                  animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 800,
+                    animateGradually: {
+                      enabled: true,
+                      delay: 150
+                    },
+                    dynamicAnimation: {
+                      enabled: true,
+                      speed: 350
+                    }
+                  },
+                },
+                colors: ["#3B82F6", "#7E3BF2"],
+                dataLabels: {
+                  enabled: false,
+                },
+                stroke: {
+                  curve: "smooth",
+                  width: 3,
+                  hover: {
+                    width: 4 
+                  }
+                },
+                fill: {
+                  type: "gradient",
+                  gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.55,
+                    opacityTo: 0.1,
+                  },
+                },
+                xaxis: {
+                  categories: dailyEarningsData.displayLabels || ["Yesterday", "Today"],
+                  labels: {
+                    show: true,
+                    style: {
+                      colors: '#9ca3af',
+                      fontSize: '10px',
+                    },
+                  },
+                  axisBorder: {
+                    show: false,
+                  },
+                  axisTicks: {
+                    show: false,
+                  },
+                },
+                yaxis: {
+                  show: true,
+                  labels: {
+                    style: {
+                      colors: '#9ca3af',
+                      fontSize: '10px',
+                    },
+                    formatter: function (value) {
+                      return '₹' + value.toFixed(0);
+                    }
+                  }
+                },
+                grid: {
+                  show: true,
+                  borderColor: '#333',
+                  strokeDashArray: 2,
+                  position: 'back',
+                  xaxis: {
+                    lines: { show: false }
+                  },
+                  yaxis: {
+                    lines: { show: true }
+                  },
+                  padding: {
+                    left: 10,
+                    right: 10
+                  }
+                },
+                tooltip: {
+                  enabled: true,
+                  custom: function({ series, seriesIndex, dataPointIndex, w }) {
+                    const displayDate = dailyEarningsData.displayLabels ? 
+                      dailyEarningsData.displayLabels[dataPointIndex] : 
+                      (dataPointIndex === 0 ? "Yesterday" : "Today");
+                    
+                    const value = series[seriesIndex][dataPointIndex];
+                    const todayValue = series[0][dataPointIndex];
+                    const previousDayValue = series[1][dataPointIndex];
+                    
+                    const currentYear = new Date().getFullYear();
+                    const formattedDate = `${displayDate}, ${currentYear}`;
+                    
+                    const seriesName = w.globals.seriesNames[seriesIndex];
+                    
+                    return `
+                      <div class="chart-tooltip py-2 px-3">
+                        <div class="text-center text-gray-400 mb-2">${formattedDate}</div>
+                        <div class="flex items-center mb-1">
+                          <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                          <span>Today: ₹${todayValue.toFixed(2)}</span>
+                        </div>
+                        <div class="flex items-center">
+                          <span class="inline-block w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
+                          <span>Previous Day: ₹${previousDayValue.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    `;
+                  },
+                  theme: "dark",
+                  style: {
+                    fontSize: '12px',
+                    fontFamily: 'Inter, sans-serif'
+                  },
+                  background: {
+                    color: '#1f2937',
+                    borderRadius: 4,
+                    opacity: 0.9,
+                  },
+                  fixed: {
+                    enabled: false
+                  },
+                  marker: {
+                    show: true
+                  },
+                  onDatasetHover: {
+                    highlightDataSeries: true,
+                  }
+                },
+                legend: {
+                  show: true,
+                  position: 'top',
+                  horizontalAlign: 'right',
+                  fontSize: '12px',
+                  fontFamily: 'Inter, sans-serif',
+                  labels: {
+                    colors: '#9ca3af'
+                  }
+                }
+              }}
+              series={[
+                {
+                  name: "Today",
+                  data: dailyEarningsData.values || [0, dailyEarnings.todayEarnings],
+                  color: "#3B82F6",
+                },
+                {
+                  name: "Previous Day",
+                  data: dailyEarningsData.values ? 
+                    [0].concat(dailyEarningsData.values.slice(0, -1)) : 
+                    [dailyEarnings.yesterdayEarnings, 0],
+                  color: "#7E3BF2",
+                }
+              ]}
+              type="area"
+              height={180}
+              width="100%"
+            />
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Bottom padding for better scrolling */}
+      {/* Additional spacing for better scrollability */}
+      <div className="pb-24"></div>
       </div>
     </div>
   );
