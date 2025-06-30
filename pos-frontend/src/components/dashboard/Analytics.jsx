@@ -578,9 +578,9 @@ const Analytics = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-2 px-6 md:px-4">
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#025cca]"></div>
+      <div className="container mx-auto py-2 px-3 sm:px-4 md:px-6">
+        <div className="flex items-center justify-center h-64 sm:h-80 md:h-96">
+          <div className="animate-spin rounded-full h-16 w-16 sm:h-24 sm:w-24 md:h-32 md:w-32 border-b-2 border-[#025cca]"></div>
         </div>
       </div>
     );
@@ -588,27 +588,32 @@ const Analytics = () => {
 
   return (
     <div className="min-h-screen overflow-y-auto scrollbar-hide">
-      <div className="container mx-auto py-6 px-12 lg:px-10 space-y-6 pb-12">
+      <div className="container mx-auto py-3 sm:py-4 md:py-6 px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 space-y-4 sm:space-y-5 md:space-y-6 pb-6 sm:pb-8 md:pb-12">
       {/* Header */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex justify-between items-center"
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4"
       >
-        <div>
-          <h2 className="font-semibold text-[#f5f5f5] text-xl">
+        <div className="flex-1">
+          <h2 className="font-semibold text-[#f5f5f5] text-lg sm:text-xl md:text-2xl lg:text-2xl">
             Restaurant Analytics Dashboard
           </h2>
-          <p className="text-sm text-[#ababab]">
+          <p className="text-xs sm:text-sm md:text-sm text-[#ababab] mt-1">
             Real-time insights into your restaurant's performance and operations
           </p>
         </div>
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-1 px-4 py-2 rounded-md text-[#f5f5f5] bg-[#1a1a1a] border border-[#4a4a4a] hover:bg-[#2a2a2a] transition-colors"
+            className="flex items-center gap-1 px-3 sm:px-4 py-2 rounded-md text-[#f5f5f5] bg-[#1a1a1a] border border-[#4a4a4a] hover:bg-[#2a2a2a] transition-colors text-xs sm:text-sm"
           >
-            {timePeriods.find(p => p.value === selectedTimePeriod)?.label}
+            <span className="hidden sm:inline">
+              {timePeriods.find(p => p.value === selectedTimePeriod)?.label}
+            </span>
+            <span className="sm:hidden">
+              {timePeriods.find(p => p.value === selectedTimePeriod)?.label.split(' ')[0]}
+            </span>
             <svg
               className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
               viewBox="0 0 24 24"
@@ -624,7 +629,7 @@ const Analytics = () => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-12 right-0 bg-[#333] border border-[#4a4a4a] rounded-md shadow-lg z-10 min-w-[150px]"
+                className="absolute top-12 right-0 bg-[#333] border border-[#4a4a4a] rounded-md shadow-lg z-10 min-w-[120px] sm:min-w-[150px]"
               >
                 {timePeriods.map((period) => (
                   <button
@@ -633,7 +638,7 @@ const Analytics = () => {
                       setSelectedTimePeriod(period.value);
                       setIsDropdownOpen(false);
                     }}
-                    className="block w-full text-left px-4 py-2 text-[#f5f5f5] hover:bg-[#4a4a4a] first:rounded-t-md last:rounded-b-md"
+                    className="block w-full text-left px-3 sm:px-4 py-2 text-[#f5f5f5] hover:bg-[#4a4a4a] first:rounded-t-md last:rounded-b-md text-xs sm:text-sm"
                   >
                     {period.label}
                   </button>
@@ -647,11 +652,11 @@ const Analytics = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-4 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
         >
-        <div className="bg-[#025cca] rounded-lg p-4 shadow-sm">
-          <div className="flex justify-between items-center">
-            <p className="font-medium text-xs text-[#f5f5f5]">Total Revenue</p>
+        <div className="bg-[#025cca] rounded-lg p-3 sm:p-4 shadow-sm">
+          <div className="flex justify-between items-start sm:items-center">
+            <p className="font-medium text-xs sm:text-xs md:text-sm text-[#f5f5f5]">Total Revenue</p>
             <div className="flex items-center gap-1">
               <svg
                 className="w-3 h-3"
@@ -668,14 +673,14 @@ const Analytics = () => {
               </p>
             </div>
           </div>
-          <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">
+          <p className="mt-1 font-semibold text-xl sm:text-2xl lg:text-2xl text-[#f5f5f5]">
             ₹{realtimeStats.totalRevenue.toLocaleString()}
           </p>
         </div>
 
-        <div className="bg-[#02ca3a] rounded-lg p-4 shadow-sm">
-          <div className="flex justify-between items-center">
-            <p className="font-medium text-xs text-[#f5f5f5]">Total Orders</p>
+        <div className="bg-[#02ca3a] rounded-lg p-3 sm:p-4 shadow-sm">
+          <div className="flex justify-between items-start sm:items-center">
+            <p className="font-medium text-xs sm:text-xs md:text-sm text-[#f5f5f5]">Total Orders</p>
             <div className="flex items-center gap-1">
               <svg className="w-3 h-3 text-[#f5f5f5]" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
                 <path d="M5 15l7-7 7 7" />
@@ -683,14 +688,14 @@ const Analytics = () => {
               <p className="font-medium text-xs text-[#f5f5f5]">Live</p>
             </div>
           </div>
-          <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">
+          <p className="mt-1 font-semibold text-xl sm:text-2xl lg:text-2xl text-[#f5f5f5]">
             {realtimeStats.totalOrders}
           </p>
         </div>
 
-        <div className="bg-[#f6b100] rounded-lg p-4 shadow-sm">
-          <div className="flex justify-between items-center">
-            <p className="font-medium text-xs text-[#f5f5f5]">Avg Order Value</p>
+        <div className="bg-[#f6b100] rounded-lg p-3 sm:p-4 shadow-sm">
+          <div className="flex justify-between items-start sm:items-center">
+            <p className="font-medium text-xs sm:text-xs md:text-sm text-[#f5f5f5]">Avg Order Value</p>
             <div className="flex items-center gap-1">
               <svg className="w-3 h-3 text-[#f5f5f5]" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
                 <path d="M5 15l7-7 7 7" />
@@ -698,14 +703,14 @@ const Analytics = () => {
               <p className="font-medium text-xs text-[#f5f5f5]">Live</p>
             </div>
           </div>
-          <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">
+          <p className="mt-1 font-semibold text-xl sm:text-2xl lg:text-2xl text-[#f5f5f5]">
             ₹{realtimeStats.avgOrderValue.toFixed(0)}
           </p>
         </div>
 
-        <div className="bg-[#be3e3f] rounded-lg p-4 shadow-sm">
-          <div className="flex justify-between items-center">
-            <p className="font-medium text-xs text-[#f5f5f5]">Active Customers</p>
+        <div className="bg-[#be3e3f] rounded-lg p-3 sm:p-4 shadow-sm">
+          <div className="flex justify-between items-start sm:items-center">
+            <p className="font-medium text-xs sm:text-xs md:text-sm text-[#f5f5f5]">Active Customers</p>
             <div className="flex items-center gap-1">
               <svg className="w-3 h-3 text-[#f5f5f5]" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
                 <path d="M5 15l7-7 7 7" />
@@ -713,20 +718,20 @@ const Analytics = () => {
               <p className="font-medium text-xs text-[#f5f5f5]">Live</p>
             </div>
           </div>
-          <p className="mt-1 font-semibold text-2xl text-[#f5f5f5]">
+          <p className="mt-1 font-semibold text-xl sm:text-2xl lg:text-2xl text-[#f5f5f5]">
             {realtimeStats.totalCustomers}
           </p>
         </div>
       </motion.div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
         {/* Order Progress Chart */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="bg-[#262626] rounded-lg p-4 md:p-6"
+          className="bg-[#262626] rounded-lg p-3 sm:p-4 md:p-6"
           whileHover={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)" }}
         >
           <motion.div 
@@ -737,7 +742,7 @@ const Analytics = () => {
           >
             <div className="flex items-center">
               <div className="flex justify-center items-center">
-                <h5 className="text-xl font-bold leading-none text-[#f5f5f5] pe-1">Order Progress</h5>
+                <h5 className="text-lg sm:text-xl font-bold leading-none text-[#f5f5f5] pe-1">Order Progress</h5>
                 <motion.svg 
                   whileHover={{ scale: 1.2, rotate: 15 }}
                   transition={{ type: "spring", stiffness: 300 }}
@@ -757,47 +762,47 @@ const Analytics = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-[#1f1f1f] p-3 rounded-lg"
+            className="bg-[#1f1f1f] p-2 sm:p-3 rounded-lg"
             whileHover={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}
           >
-            <div className="grid grid-cols-3 gap-3 mb-2">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-2">
               <motion.dl 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[78px]"
+                className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[60px] sm:h-[70px] md:h-[78px]"
                 whileHover={{ scale: 1.05, backgroundColor: "#3d3d3d" }}
               >
-                <dt className="w-8 h-8 rounded-full bg-[#f6b100] bg-opacity-20 text-[#f6b100] text-sm font-medium flex items-center justify-center mb-1">
+                <dt className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-[#f6b100] bg-opacity-20 text-[#f6b100] text-xs sm:text-sm font-medium flex items-center justify-center mb-1">
                   {orderStats.inProgress}
                 </dt>
-                <dd className="text-[#f6b100] text-sm font-medium">In Progress</dd>
+                <dd className="text-[#f6b100] text-xs sm:text-sm font-medium text-center">In Progress</dd>
               </motion.dl>
               
               <motion.dl 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[78px]"
+                className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[60px] sm:h-[70px] md:h-[78px]"
                 whileHover={{ scale: 1.05, backgroundColor: "#3d3d3d" }}
               >
-                <dt className="w-8 h-8 rounded-full bg-[#02ca3a] bg-opacity-20 text-[#02ca3a] text-sm font-medium flex items-center justify-center mb-1">
+                <dt className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-[#02ca3a] bg-opacity-20 text-[#02ca3a] text-xs sm:text-sm font-medium flex items-center justify-center mb-1">
                   {orderStats.ready}
                 </dt>
-                <dd className="text-[#02ca3a] text-sm font-medium">Ready</dd>
+                <dd className="text-[#02ca3a] text-xs sm:text-sm font-medium text-center">Ready</dd>
               </motion.dl>
               
               <motion.dl 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.5 }}
-                className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[78px]"
+                className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[60px] sm:h-[70px] md:h-[78px]"
                 whileHover={{ scale: 1.05, backgroundColor: "#3d3d3d" }}
               >
-                <dt className="w-8 h-8 rounded-full bg-[#025cca] bg-opacity-20 text-[#025cca] text-sm font-medium flex items-center justify-center mb-1">
+                <dt className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-[#025cca] bg-opacity-20 text-[#025cca] text-xs sm:text-sm font-medium flex items-center justify-center mb-1">
                   {orderStats.completed}
                 </dt>
-                <dd className="text-[#025cca] text-sm font-medium">Completed</dd>
+                <dd className="text-[#025cca] text-xs sm:text-sm font-medium text-center">Completed</dd>
               </motion.dl>
             </div>
 
@@ -868,7 +873,7 @@ const Analytics = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="py-3 h-54" 
+            className="py-2 sm:py-3 h-48 sm:h-52 md:h-54" 
           >
             <RadialChart orderStats={orderStats} />
           </motion.div>
@@ -879,9 +884,9 @@ const Analytics = () => {
             transition={{ duration: 0.5, delay: 0.8 }}
             className="grid grid-cols-1 items-center border-t border-[#4a4a4a] justify-between"
           >
-            <div className="flex justify-between items-center pt-5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-3 sm:pt-5 gap-3 sm:gap-0">
               <motion.select 
-                className="text-sm font-medium text-[#f5f5f5] bg-[#333] hover:bg-[#3d3d3d] rounded-md px-3 py-1 border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#025cca] cursor-pointer"
+                className="text-xs sm:text-sm font-medium text-[#f5f5f5] bg-[#333] hover:bg-[#3d3d3d] rounded-md px-2 sm:px-3 py-1 border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#025cca] cursor-pointer w-full sm:w-auto"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -896,9 +901,10 @@ const Analytics = () => {
                 whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
                 whileTap={{ scale: 0.95 }}
                 href="#"
-                className="uppercase text-sm font-semibold inline-flex items-center rounded-lg text-[#025cca] hover:text-[#0273fa] px-3 py-2"
+                className="uppercase text-xs sm:text-sm font-semibold inline-flex items-center rounded-lg text-[#025cca] hover:text-[#0273fa] px-2 sm:px-3 py-2"
               >
-                Detailed report
+                <span className="hidden sm:inline">Detailed report</span>
+                <span className="sm:hidden">Report</span>
                 <svg className="w-2.5 h-2.5 ms-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                   <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
                 </svg>
@@ -912,7 +918,7 @@ const Analytics = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="bg-[#262626] rounded-lg p-4 md:p-6"
+          className="bg-[#262626] rounded-lg p-3 sm:p-4 md:p-6"
           whileHover={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)" }}
         >
           <motion.div 
@@ -923,7 +929,7 @@ const Analytics = () => {
           >
             <div className="flex items-center">
               <div className="flex justify-center items-center">
-                <h5 className="text-xl font-bold leading-none text-[#f5f5f5] pe-1">Customer Satisfaction</h5>
+                <h5 className="text-lg sm:text-xl font-bold leading-none text-[#f5f5f5] pe-1">Customer Satisfaction</h5>
                 <motion.svg 
                   whileHover={{ scale: 1.2, rotate: 15 }}
                   transition={{ type: "spring", stiffness: 300 }}
@@ -944,22 +950,22 @@ const Analytics = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="bg-[#1f1f1f] p-3 rounded-lg mb-4"
+            className="bg-[#1f1f1f] p-2 sm:p-3 rounded-lg mb-3 sm:mb-4"
             whileHover={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}
           >
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-[#333] rounded-lg p-3 text-center"
+                className="bg-[#333] rounded-lg p-2 sm:p-3 text-center"
                 whileHover={{ scale: 1.02, backgroundColor: "#3d3d3d" }}
               >
-                <div className="text-2xl font-bold text-[#02ca3a] mb-1">4.6</div>
+                <div className="text-xl sm:text-2xl font-bold text-[#02ca3a] mb-1">4.6</div>
                 <div className="text-xs text-[#ababab]">Overall Rating</div>
                 <div className="flex justify-center mt-1">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <svg key={star} className={`w-3 h-3 ${star <= 4 ? 'text-[#f6b100]' : 'text-[#4a4a4a]'}`} fill="currentColor" viewBox="0 0 20 20">
+                    <svg key={star} className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${star <= 4 ? 'text-[#f6b100]' : 'text-[#4a4a4a]'}`} fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                     </svg>
                   ))}
@@ -970,10 +976,10 @@ const Analytics = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.5 }}
-                className="bg-[#333] rounded-lg p-3 text-center"
+                className="bg-[#333] rounded-lg p-2 sm:p-3 text-center"
                 whileHover={{ scale: 1.02, backgroundColor: "#3d3d3d" }}
               >
-                <div className="text-2xl font-bold text-[#025cca] mb-1">156</div>
+                <div className="text-xl sm:text-2xl font-bold text-[#025cca] mb-1">156</div>
                 <div className="text-xs text-[#ababab]">Total Reviews</div>
                 <div className="text-xs text-[#02ca3a] mt-1">↗ +12 this week</div>
               </motion.div>
@@ -991,7 +997,7 @@ const Analytics = () => {
               <h6 className="text-sm font-semibold text-[#f5f5f5]">Recent Reviews</h6>
             </div>
 
-            <div className="max-h-48 overflow-y-auto">
+            <div className="max-h-40 sm:max-h-48 overflow-y-auto">
               {[
                 { 
                   id: 1, 
@@ -1047,23 +1053,23 @@ const Analytics = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="px-3 py-2 border-b border-[#333] hover:bg-[#2a2a2a] transition-colors"
+                  className="px-2 sm:px-3 py-2 border-b border-[#333] hover:bg-[#2a2a2a] transition-colors"
                   whileHover={{ backgroundColor: "#2a2a2a" }}
                 >
                   <div className="flex items-start justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-[#025cca] flex items-center justify-center text-xs font-medium text-white">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#025cca] flex items-center justify-center text-xs font-medium text-white flex-shrink-0">
                         {review.customer.split(' ').map(n => n[0]).join('')}
                       </div>
-                      <div>
-                        <div className="text-xs font-medium text-[#f5f5f5]">{review.customer}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium text-[#f5f5f5] truncate">{review.customer}</div>
                         <div className="text-xs text-[#ababab]">Order {review.order}</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 mb-1">
+                    <div className="text-right flex-shrink-0 ml-2">
+                      <div className="flex items-center gap-0.5 sm:gap-1 mb-1">
                         {[1, 2, 3, 4, 5].map((star) => (
-                          <svg key={star} className={`w-2.5 h-2.5 ${star <= review.rating ? 'text-[#f6b100]' : 'text-[#4a4a4a]'}`} fill="currentColor" viewBox="0 0 20 20">
+                          <svg key={star} className={`w-2 h-2 sm:w-2.5 sm:h-2.5 ${star <= review.rating ? 'text-[#f6b100]' : 'text-[#4a4a4a]'}`} fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                           </svg>
                         ))}
@@ -1071,7 +1077,7 @@ const Analytics = () => {
                       <div className="text-xs text-[#ababab]">{review.date}</div>
                     </div>
                   </div>
-                  <p className="text-xs text-[#f5f5f5] leading-relaxed">{review.comment}</p>
+                  <p className="text-xs text-[#f5f5f5] leading-relaxed overflow-hidden">{review.comment}</p>
                 </motion.div>
               ))}
             </div>
@@ -1082,10 +1088,10 @@ const Analytics = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.8 }}
-            className="flex justify-between items-center pt-4 border-t border-[#4a4a4a] mt-4"
+            className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-3 sm:pt-4 border-t border-[#4a4a4a] mt-3 sm:mt-4 gap-3 sm:gap-0"
           >
             <motion.select 
-              className="text-sm font-medium text-[#f5f5f5] bg-[#333] hover:bg-[#3d3d3d] rounded-md px-3 py-1 border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#025cca] cursor-pointer"
+              className="text-xs sm:text-sm font-medium text-[#f5f5f5] bg-[#333] hover:bg-[#3d3d3d] rounded-md px-2 sm:px-3 py-1 border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#025cca] cursor-pointer w-full sm:w-auto"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -1098,32 +1104,35 @@ const Analytics = () => {
               whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
               whileTap={{ scale: 0.95 }}
               href="#"
-              className="uppercase text-sm font-semibold inline-flex items-center rounded-lg text-[#025cca] hover:text-[#0273fa] px-3 py-2"
+              className="uppercase text-xs sm:text-sm font-semibold inline-flex items-center rounded-lg text-[#025cca] hover:text-[#0273fa] px-2 sm:px-3 py-2"
             >
-              View all reviews
+              <span className="hidden sm:inline">View all reviews</span>
+              <span className="sm:hidden">All reviews</span>
               <svg className="w-2.5 h-2.5 ms-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
               </svg>
             </motion.a>
           </motion.div>
         </motion.div>
-      </div>        {/* Integrated Charts from Payments */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      </div>
+
+      {/* Integrated Charts from Payments */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
         {/* Daily Earnings Overview */}
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-[#262626] p-5 rounded-lg shadow-lg"
+          className="bg-[#262626] p-3 sm:p-4 md:p-5 rounded-lg shadow-lg"
         >
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-semibold text-[#f5f5f5]">Daily Earnings</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-[#f5f5f5]">Daily Earnings</h3>
           </div>
           
-          <div className="flex gap-4 mb-4">
-            <div className="flex-1 bg-[#1a1a1a] p-3 rounded-lg shadow-md">
-              <h4 className="text-sm font-semibold mb-1 text-[#f5f5f5]">Current Period</h4>
-              <p className="text-2xl font-bold text-blue-400">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-3 sm:mb-4">
+            <div className="flex-1 bg-[#1a1a1a] p-2 sm:p-3 rounded-lg shadow-md">
+              <h4 className="text-xs sm:text-sm font-semibold mb-1 text-[#f5f5f5]">Current Period</h4>
+              <p className="text-lg sm:text-xl md:text-2xl font-bold text-blue-400">
                 ₹{dailyEarningsData.values && dailyEarningsData.values.length > 0 
                   ? dailyEarningsData.values.reduce((sum, val) => sum + val, 0).toFixed(2)
                   : "0.00"}
@@ -1140,9 +1149,9 @@ const Analytics = () => {
                   : "Last 90 days"}
               </p>
             </div>
-            <div className="flex-1 bg-[#1a1a1a] p-3 rounded-lg shadow-md">
-              <h4 className="text-sm font-semibold mb-1 text-[#f5f5f5]">Average Daily</h4>
-              <p className="text-2xl font-bold text-purple-400">
+            <div className="flex-1 bg-[#1a1a1a] p-2 sm:p-3 rounded-lg shadow-md">
+              <h4 className="text-xs sm:text-sm font-semibold mb-1 text-[#f5f5f5]">Average Daily</h4>
+              <p className="text-lg sm:text-xl md:text-2xl font-bold text-purple-400">
                 ₹{dailyEarningsData.values && dailyEarningsData.values.length > 0 
                   ? (dailyEarningsData.values.reduce((sum, val) => sum + val, 0) / dailyEarningsData.values.length).toFixed(2) 
                   : "0.00"}
@@ -1156,7 +1165,7 @@ const Analytics = () => {
             </div>
           </div>
 
-          <div className="h-36">
+          <div className="h-28 sm:h-32 md:h-36">
             {integratedDailyEarningsChart.series[0].data.length > 0 ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -1446,13 +1455,13 @@ const Analytics = () => {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-[#262626] p-5 rounded-lg shadow-lg"
+          className="bg-[#262626] p-3 sm:p-4 md:p-5 rounded-lg shadow-lg"
         >
-          <h3 className="text-lg font-semibold mb-3 text-[#f5f5f5]">Compared to Yesterday</h3>
-          <div className="flex gap-4">
-            <div className="flex-1 bg-[#1a1a1a] p-3 rounded-lg shadow-md">
-              <h4 className="text-sm font-semibold mb-1 text-[#f5f5f5]">Today's Earnings</h4>
-              <p className="text-2xl font-bold text-green-400">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 text-[#f5f5f5]">Compared to Yesterday</h3>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <div className="flex-1 bg-[#1a1a1a] p-2 sm:p-3 rounded-lg shadow-md">
+              <h4 className="text-xs sm:text-sm font-semibold mb-1 text-[#f5f5f5]">Today's Earnings</h4>
+              <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-400">
                 ₹{dailyEarnings.todayEarnings.toFixed(2)}
               </p>
               <p className="text-xs text-gray-400 mt-1">
@@ -1462,15 +1471,15 @@ const Analytics = () => {
                 {percentageChange.toFixed(2)}% compared to yesterday
               </p>
             </div>
-            <div className="flex-1 bg-[#1a1a1a] p-3 rounded-lg shadow-md">
-              <h4 className="text-sm font-semibold mb-1 text-[#f5f5f5]">Yesterday's Earnings</h4>
-              <p className="text-2xl font-bold text-red-400">
+            <div className="flex-1 bg-[#1a1a1a] p-2 sm:p-3 rounded-lg shadow-md">
+              <h4 className="text-xs sm:text-sm font-semibold mb-1 text-[#f5f5f5]">Yesterday's Earnings</h4>
+              <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-400">
                 ₹{dailyEarnings.yesterdayEarnings.toFixed(2)}
               </p>
             </div>
           </div>
 
-          <div className="mt-3">
+          <div className="mt-3 h-40 sm:h-44 md:h-48">
             <Chart
               options={{
                 chart: {
@@ -1634,7 +1643,7 @@ const Analytics = () => {
                 }
               ]}
               type="area"
-              height={180}
+              height="100%"
               width="100%"
             />
           </div>
@@ -1642,8 +1651,7 @@ const Analytics = () => {
       </div>
 
       {/* Bottom padding for better scrolling */}
-      {/* Additional spacing for better scrollability */}
-      <div className="pb-24"></div>
+      <div className="pb-12 sm:pb-16 md:pb-20 lg:pb-24"></div>
       </div>
     </div>
   );

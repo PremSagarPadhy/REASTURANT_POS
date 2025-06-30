@@ -242,12 +242,14 @@ const RecentOrders = () => {
             </thead>
             <tbody>
               <AnimatePresence>
-                {paginatedOrders.map((order, index) => (
-                  <motion.tr 
-                    key={order._id} 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
+                {paginatedOrders.map((order, index) => {
+                  const dateTime = formatDateAndTime(order.orderDate);
+                  return (
+                    <motion.tr 
+                      key={order._id} 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                     className="border-b border-gray-600 hover:bg-[#333]"
                     whileHover={{ 
@@ -276,7 +278,12 @@ const RecentOrders = () => {
                         <option className="text-blue-500" value="Completed">Completed</option>
                       </motion.select>
                     </td>
-                    <td className="p-2">{formatDateAndTime(order.orderDate)}</td>
+                    <td className="p-2">
+                      <div className="flex flex-col text-xs">
+                        <span>{dateTime.date}</span>
+                        <span className="text-[#ababab]">{dateTime.time}</span>
+                      </div>
+                    </td>
                     <td className="p-2 flex items-center space-x-4">
                       <motion.button 
                         whileHover={{ scale: 1.2, color: "#3b82f6" }}
@@ -304,7 +311,8 @@ const RecentOrders = () => {
                       </motion.button>
                     </td>
                   </motion.tr>
-                ))}
+                  );
+                })}
               </AnimatePresence>
 
               {paginatedOrders.length === 0 && filteredOrders.length > 0 && (

@@ -288,6 +288,8 @@ const OrderList = () => {
   const [timePeriod, setTimePeriod] = useState("month");
   const [columnFilters, setColumnFilters] = useState({});
   const [activeFilter, setActiveFilter] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ordersPerPage] = useState(5);
   const [orderStats, setOrderStats] = useState({
     total: 0,
     inProgress: 0,
@@ -412,6 +414,30 @@ const OrderList = () => {
       })
     : [];
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+  const startIndex = (currentPage - 1) * ordersPerPage;
+  const endIndex = startIndex + ordersPerPage;
+  const currentOrders = filteredOrders.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, columnFilters]);
+
+  // Pagination functions
+  const goToPage = (page) => {
+    setCurrentPage(page);
+  };
+
+  const goToPreviousPage = () => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  };
+
+  const goToNextPage = () => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  };
+
   // Metrics data for the top cards
   const metricsData = [
     { 
@@ -457,13 +483,13 @@ const OrderList = () => {
   ];
 
   return (
-    <div className="bg-[#1a1a1a] min-h-screen pl-6 pr-6 pt-6 pb-6">
+    <div className="bg-[#1a1a1a] min-h-screen p-3 md:pl-6 md:pr-6 md:pt-6 md:pb-6">
       {/* Top Metrics Cards */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-none py-2 px-4"
+        className="w-full max-w-none py-2 px-2 md:px-4"
       >
         <div className="flex justify-between items-center">
           <motion.div
@@ -564,8 +590,8 @@ const OrderList = () => {
       </motion.div>
 
       {/* Advanced Order Stats Card with Pie Chart */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 px-4">
-        <div className="md:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-6 md:mt-8 px-2 md:px-4">
+        <div className="lg:col-span-1">
           <OrderStatsCard orderStats={orderStats} />
         </div>
         
@@ -573,61 +599,64 @@ const OrderList = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-[#262626] p-4 rounded-lg shadow-lg md:col-span-2"
+          className="bg-[#262626] p-2 md:p-4 rounded-lg shadow-lg lg:col-span-2"
           whileHover={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)" }}
         >
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+          <div className="flex flex-col gap-4 mb-4">
             <motion.h2 
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.5 }}
-              className="text-[#f5f5f5] text-xl font-semibold"
+              className="text-[#f5f5f5] text-lg md:text-xl font-semibold"
             >
               Recent Orders
             </motion.h2>
             
-            <div className="flex flex-col md:flex-row gap-3 mt-3 md:mt-0 w-full md:w-auto">
-              {/* Search Bar */}
-              <motion.div 
-                initial={{ opacity: 0, width: "80%" }}
-                animate={{ opacity: 1, width: "100%" }}
-                transition={{ duration: 0.5 }}
-                className="relative"
-                whileHover={{ scale: 1.02 }}
-              >
-                <input
-                  type="text"
-                  placeholder="Search orders or customers..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="bg-[#333] text-[#f5f5f5] rounded-md px-3 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-[#025cca] border border-[#4a4a4a]"
-                />
-                <motion.svg 
-                  whileHover={{ scale: 1.2, rotate: 15 }}
-                  className="w-4 h-4 text-[#ababab] absolute right-3 top-2.5" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
+            <div className="flex flex-col sm:flex-row gap-3 mt-3 w-full">
+              {/* Search Bar and Status Filter Row */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                {/* Search Bar */}
+                <motion.div 
+                  initial={{ opacity: 0, width: "80%" }}
+                  animate={{ opacity: 1, width: "100%" }}
+                  transition={{ duration: 0.5 }}
+                  className="relative flex-1"
+                  whileHover={{ scale: 1.02 }}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </motion.svg>
-              </motion.div>
-              
-              {/* Status Filter */}
-              <motion.select
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-[#333] text-[#f5f5f5] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#025cca] border border-[#4a4a4a]"
-                whileHover={{ scale: 1.02 }}
-              >
-                <option value="All" className="bg-[#333] text-[#f5f5f5]">All Statuses</option>
-                <option value="In Progress" className="bg-[#333] text-[#f5f5f5]">In Progress</option>
-                <option value="Ready" className="bg-[#333] text-[#f5f5f5]">Ready</option>
-                <option value="Completed" className="bg-[#333] text-[#f5f5f5]">Completed</option>
-              </motion.select>
+                  <input
+                    type="text"
+                    placeholder="Search orders or customers..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="bg-[#333] text-[#f5f5f5] rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#025cca] border border-[#4a4a4a] text-sm"
+                  />
+                  <motion.svg 
+                    whileHover={{ scale: 1.2, rotate: 15 }}
+                    className="w-4 h-4 text-[#ababab] absolute right-3 top-2.5" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </motion.svg>
+                </motion.div>
+                
+                {/* Status Filter */}
+                <motion.select
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="bg-[#333] text-[#f5f5f5] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#025cca] border border-[#4a4a4a] text-sm w-full sm:w-auto sm:min-w-[150px]"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <option value="All" className="bg-[#333] text-[#f5f5f5]">All Statuses</option>
+                  <option value="In Progress" className="bg-[#333] text-[#f5f5f5]">In Progress</option>
+                  <option value="Ready" className="bg-[#333] text-[#f5f5f5]">Ready</option>
+                  <option value="Completed" className="bg-[#333] text-[#f5f5f5]">Completed</option>
+                </motion.select>
+              </div>
             </div>
           </div>
 
@@ -646,12 +675,13 @@ const OrderList = () => {
               ></motion.div>
             </div>
           ) : (
-            <div className="h-96 overflow-auto custom-scrollbar-hidden">
-              <table className="w-full text-left text-[#f5f5f5]">
+            <div className="h-68 md:h-86 overflow-x-auto overflow-y-auto custom-scrollbar-hidden custom-scrollbar-horizontal">
+              <div className="min-w-[800px]">
+                <table className="w-full text-left text-[#f5f5f5] responsive-table">
                 <thead className="bg-[#333] text-[#ababab] sticky top-0">
                   <tr>
                     {tableHeaders.map((header) => (
-                      <th key={header.id} className="p-3 relative">
+                      <th key={header.id} className="p-2 md:p-3 relative zoom-responsive-text-sm">
                         <div className="flex items-center gap-1">
                           {header.label}
                           <motion.div
@@ -684,58 +714,66 @@ const OrderList = () => {
                 </thead>
                 <tbody>
                   <AnimatePresence>
-                    {filteredOrders.map((order, index) => (
-                      <motion.tr 
-                        key={order._id} 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="border-b border-gray-600 hover:bg-[#333]"
-                        whileHover={{ 
-                          backgroundColor: "#3d3d3d",
-                          transition: { duration: 0.1 }
-                        }}
-                      >
-                        <td className="p-2">#{Math.floor(new Date(order.orderDate).getTime() % 10000)}</td>
-                        <td className="p-1">{order.customerDetails.name}</td>
-                        <td className="p-3">
-                          <motion.span
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
-                            className={`px-3 py-1 rounded-full text-xs whitespace-nowrap inline-block min-w-[90px] text-center ${
-                              order.orderStatus === "Ready"
-                                ? "bg-green-900 text-green-400"
-                                : order.orderStatus === "Completed"
-                                ? "bg-blue-900 text-blue-400"
-                                : "bg-yellow-900 text-yellow-400"
-                            }`}
-                          >
-                            {order.orderStatus}
-                          </motion.span>
-                        </td>
-                        <td className="p-2">{formatDateAndTime(order.orderDate)}</td>
-                        <td className="p-2">{order.items.length} </td>
-                        <td className="p-2">{order.table.tableNo}</td>
-                        <td className="p-2">₹{order.bills.totalWithTax}</td>
-                        <td className="p-2">
-                          <motion.span 
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              order.paymentMethod === "Cash" 
-                                ? "bg-purple-900 text-purple-400"
-                                : "bg-teal-900 text-teal-400"
-                            }`}
-                          >
-                            {order.paymentMethod}
-                          </motion.span>
-                        </td>
-                      </motion.tr>
-                    ))}
+                    {currentOrders.map((order, index) => {
+                      const dateTime = formatDateAndTime(order.orderDate);
+                      return (
+                        <motion.tr 
+                          key={order._id} 
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className="border-b border-gray-600 hover:bg-[#333]"
+                          whileHover={{ 
+                            backgroundColor: "#3d3d3d",
+                            transition: { duration: 0.1 }
+                          }}
+                        >
+                          <td className="p-1 md:p-2 zoom-responsive-text-xs">#{Math.floor(new Date(order.orderDate).getTime() % 10000)}</td>
+                          <td className="p-1 md:p-2 zoom-responsive-text-xs truncate max-w-24 md:max-w-none">{order.customerDetails.name}</td>
+                          <td className="p-1 md:p-3">
+                            <motion.span
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.95 }}
+                              className={`px-2 md:px-3 py-1 rounded-full text-xs whitespace-nowrap inline-block min-w-[70px] md:min-w-[90px] text-center ${
+                                order.orderStatus === "Ready"
+                                  ? "bg-green-900 text-green-400"
+                                  : order.orderStatus === "Completed"
+                                  ? "bg-blue-900 text-blue-400"
+                                  : "bg-yellow-900 text-yellow-400"
+                              }`}
+                            >
+                              {order.orderStatus}
+                            </motion.span>
+                          </td>
+                          <td className="p-1 md:p-2 zoom-responsive-text-xs">
+                            <div className="flex flex-col">
+                              <span className="text-[#f5f5f5]">{dateTime.date}</span>
+                              <span className="text-[#ababab] zoom-responsive-text-xs">{dateTime.time}</span>
+                            </div>
+                          </td>
+                          <td className="p-1 md:p-2 zoom-responsive-text-xs text-center">{order.items.length}</td>
+                          <td className="p-1 md:p-2 zoom-responsive-text-xs text-center">{order.table.tableNo}</td>
+                          <td className="p-1 md:p-2 zoom-responsive-text-xs">₹{order.bills.totalWithTax}</td>
+                          <td className="p-1 md:p-2">
+                            <motion.span 
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.95 }}
+                              className={`px-2 py-1 rounded-full text-xs ${
+                                order.paymentMethod === "Cash" 
+                                  ? "bg-purple-900 text-purple-400"
+                                  : "bg-teal-900 text-teal-400"
+                              }`}
+                            >
+                              {order.paymentMethod}
+                            </motion.span>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
                   </AnimatePresence>
                   
-                  {filteredOrders.length === 0 && (
+                  {currentOrders.length === 0 && (
                     <motion.tr
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -758,53 +796,89 @@ const OrderList = () => {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
           
-          {/* Pagination Controls - Animated */}
+          {/* Pagination Controls - Enhanced */}
           {filteredOrders.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.6 }}
-              className="flex justify-between items-center mt-4"
+              className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4"
             >
               <motion.span
                 whileHover={{ scale: 1.05 }}
-                className="text-[#ababab] text-sm"
+                className="text-[#ababab] text-sm order-2 sm:order-1"
               >
-                Showing {filteredOrders.length} of {resData?.data?.data?.length || 0} orders
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredOrders.length)} of {filteredOrders.length} orders
               </motion.span>
               
-              <div className="flex gap-1">
+              <div className="flex items-center gap-2 order-1 sm:order-2">
                 <motion.button
                   whileHover={{ scale: 1.1, backgroundColor: "#3d3d3d" }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-3 py-1 rounded-md bg-[#333] text-[#ababab] border border-[#4a4a4a]"
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 rounded-md border border-[#4a4a4a] text-sm ${
+                    currentPage === 1 
+                      ? "bg-[#262626] text-[#4a4a4a] cursor-not-allowed" 
+                      : "bg-[#333] text-[#ababab] hover:text-[#f5f5f5]"
+                  }`}
                 >
                   Previous
                 </motion.button>
                 
-                <motion.button
-                  whileHover={{ scale: 1.1, backgroundColor: "#025cca" }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-3 py-1 rounded-md bg-[#333] text-[#f5f5f5] border border-[#4a4a4a]"
-                >
-                  1
-                </motion.button>
+                {/* Page Numbers */}
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show only 5 pages at a time for better mobile experience
+                    const shouldShow = 
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1);
+                    
+                    if (!shouldShow && page !== currentPage - 2 && page !== currentPage + 2) {
+                      return null;
+                    }
+                    
+                    if (page === currentPage - 2 || page === currentPage + 2) {
+                      return (
+                        <span key={page} className="px-2 py-1 text-[#ababab] text-sm">
+                          ...
+                        </span>
+                      );
+                    }
+                    
+                    return (
+                      <motion.button
+                        key={page}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => goToPage(page)}
+                        className={`px-3 py-1 rounded-md border border-[#4a4a4a] text-sm min-w-[36px] ${
+                          currentPage === page
+                            ? "bg-[#025cca] text-[#f5f5f5] border-[#025cca]"
+                            : "bg-[#333] text-[#ababab] hover:bg-[#3d3d3d] hover:text-[#f5f5f5]"
+                        }`}
+                      >
+                        {page}
+                      </motion.button>
+                    );
+                  })}
+                </div>
                 
                 <motion.button
                   whileHover={{ scale: 1.1, backgroundColor: "#3d3d3d" }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-3 py-1 rounded-md bg-[#333] text-[#ababab] border border-[#4a4a4a]"
-                >
-                  2
-                </motion.button>
-                
-                <motion.button
-                  whileHover={{ scale: 1.1, backgroundColor: "#3d3d3d" }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-3 py-1 rounded-md bg-[#333] text-[#ababab] border border-[#4a4a4a]"
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-1 rounded-md border border-[#4a4a4a] text-sm ${
+                    currentPage === totalPages 
+                      ? "bg-[#262626] text-[#4a4a4a] cursor-not-allowed" 
+                      : "bg-[#333] text-[#ababab] hover:text-[#f5f5f5]"
+                  }`}
                 >
                   Next
                 </motion.button>

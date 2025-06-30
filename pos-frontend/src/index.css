@@ -118,3 +118,64 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Responsive table styles for different zoom levels and screen sizes */
+@media (max-width: 768px) {
+  .responsive-table {
+    font-size: 0.75rem; /* 12px */
+  }
+  
+  .responsive-table th,
+  .responsive-table td {
+    padding: 0.25rem !important; /* 4px */
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .responsive-table {
+    font-size: 0.875rem; /* 14px */
+  }
+}
+
+@media (min-width: 1025px) {
+  .responsive-table {
+    font-size: 0.875rem; /* 14px */
+  }
+}
+
+/* Responsive text that scales with zoom */
+.zoom-responsive-text {
+  font-size: clamp(0.75rem, 2vw, 1rem);
+}
+
+.zoom-responsive-text-sm {
+  font-size: clamp(0.625rem, 1.5vw, 0.875rem);
+}
+
+.zoom-responsive-text-xs {
+  font-size: clamp(0.5rem, 1vw, 0.75rem);
+}
+
+/* Custom scrollbar for horizontal scroll */
+.custom-scrollbar-horizontal {
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a #262626;
+}
+
+.custom-scrollbar-horizontal::-webkit-scrollbar {
+  height: 6px;
+}
+
+.custom-scrollbar-horizontal::-webkit-scrollbar-track {
+  background: #262626;
+  border-radius: 3px;
+}
+
+.custom-scrollbar-horizontal::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 3px;
+}
+
+.custom-scrollbar-horizontal::-webkit-scrollbar-thumb:hover {
+  background: #5a5a5a;
+}

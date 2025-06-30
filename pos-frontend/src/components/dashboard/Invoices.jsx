@@ -370,14 +370,16 @@ const Invoices = () => {
                 </thead>
                 <tbody>
                   <AnimatePresence>
-                    {paginatedOrders.map((order, index) => (
-                      <motion.tr 
-                        key={order._id} 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="border-b border-gray-600 hover:bg-[#333]"
+                    {paginatedOrders.map((order, index) => {
+                      const dateTime = formatDateAndTime(order.orderDate);
+                      return (
+                        <motion.tr 
+                          key={order._id} 
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className="border-b border-gray-600 hover:bg-[#333]"
                         whileHover={{ 
                           backgroundColor: "#3d3d3d",
                           transition: { duration: 0.1 }
@@ -400,7 +402,12 @@ const Invoices = () => {
                             {order.orderStatus}
                           </motion.span>
                         </td>
-                        <td className="p-2">{formatDateAndTime(order.orderDate)}</td>
+                        <td className="p-2">
+                          <div className="flex flex-col text-xs">
+                            <span>{dateTime.date}</span>
+                            <span className="text-[#ababab]">{dateTime.time}</span>
+                          </div>
+                        </td>
                         <td className="p-2">{order.items.length} Items</td>
                         <td className="p-2">Table - {order.table.tableNo}</td>
                         <td className="p-2">₹{order.bills.totalWithTax}</td>
@@ -429,7 +436,8 @@ const Invoices = () => {
                           </motion.button>
                         </td>
                       </motion.tr>
-                    ))}
+                      );
+                    })}
                   </AnimatePresence>
                   
                   {paginatedOrders.length === 0 && filteredOrders.length > 0 && (

@@ -4,6 +4,7 @@ import { formatDateAndTime, getAvatarName } from "../../utils/index";
 
 const OrderCard = ({ key, order }) => {
   console.log("Order Data:", order);
+  const dateTime = formatDateAndTime(order.orderDate);
 
   return (
     <div key={key} className="w-[500px] bg-[#262626] p-4 rounded-lg mb-4">
@@ -52,7 +53,10 @@ const OrderCard = ({ key, order }) => {
         </div>
       </div>
       <div className="flex justify-between items-center mt-4 text-[#ababab]">
-        <p>{formatDateAndTime(order.orderDate)}</p>
+        <div className="flex flex-col text-xs">
+          <span>{dateTime.date}</span>
+          <span>{dateTime.time}</span>
+        </div>
         <p>{order.items.length} Items</p>
       </div>
       <hr className="w-full mt-4 border-t-1 border-gray-500" />

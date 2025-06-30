@@ -32,16 +32,19 @@ export const formatDate = (date) => {
 };
 
 export const formatDateAndTime = (date) => {
-  const dateAndTime = new Date(date).toLocaleString("en-US", {
-    month: "long",
+  const dateObj = new Date(date);
+  const dateString = dateObj.toLocaleDateString("en-US", {
+    month: "short",
     day: "2-digit",
     year: "numeric",
+    timeZone: "Asia/Kolkata"
+  });
+  const timeString = dateObj.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
     hour12: true,
     timeZone: "Asia/Kolkata"
-  })
+  });
 
-  return dateAndTime;
+  return { date: dateString, time: timeString };
 }

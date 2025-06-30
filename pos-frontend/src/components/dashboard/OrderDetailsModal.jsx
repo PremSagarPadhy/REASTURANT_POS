@@ -3,6 +3,8 @@ import { formatDateAndTime } from "../../utils";
 
 const OrderDetailsModal = ({ isOpen, onClose, orderData }) => {
   if (!isOpen || !orderData) return null;
+  
+  const dateTime = formatDateAndTime(orderData.orderDate);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -22,7 +24,8 @@ const OrderDetailsModal = ({ isOpen, onClose, orderData }) => {
             <h3 className="text-[#f5f5f5] font-semibold mb-2">Order Information</h3>
             <div className="text-[#ababab]">
               <p><span className="text-[#f5f5f5]">Order ID:</span> #{Math.floor(new Date(orderData.orderDate).getTime())}</p>
-              <p><span className="text-[#f5f5f5]">Date & Time:</span> {formatDateAndTime(orderData.orderDate)}</p>
+              <p><span className="text-[#f5f5f5]">Date:</span> {dateTime.date}</p>
+              <p><span className="text-[#f5f5f5]">Time:</span> {dateTime.time}</p>
               <p><span className="text-[#f5f5f5]">Status:</span> {orderData.orderStatus}</p>
               <p><span className="text-[#f5f5f5]">Payment Method:</span> {orderData.paymentMethod}</p>
             </div>
