@@ -244,26 +244,57 @@ const Analytics = () => {
 
   const fetchDailyEarnings = async () => {
     try {
+      console.log("Fetching daily earnings for date:", selectedDate);
       const response = await axios.get(
         `${API_URL}/payment/daily-earnings?date=${selectedDate}`,
         { withCredentials: true }
       );
 
+      console.log("Daily earnings response:", response.data);
+
       if (response.data.success) {
         const { todayEarnings, yesterdayEarnings } = response.data;
 
+        console.log("Today's earnings:", todayEarnings, "Type:", typeof todayEarnings);
+        console.log("Yesterday's earnings:", yesterdayEarnings, "Type:", typeof yesterdayEarnings);
+
+        // Ensure values are numbers
+        const todayEarningsNum = Number(todayEarnings) || 0;
+        const yesterdayEarningsNum = Number(yesterdayEarnings) || 0;
+
+        console.log("Converted - Today's earnings:", todayEarningsNum);
+        console.log("Converted - Yesterday's earnings:", yesterdayEarningsNum);
+
         const change =
-          yesterdayEarnings > 0
-            ? ((todayEarnings - yesterdayEarnings) / yesterdayEarnings) * 100
-            : todayEarnings > 0
+          yesterdayEarningsNum > 0
+            ? ((todayEarningsNum - yesterdayEarningsNum) / yesterdayEarningsNum) * 100
+            : todayEarningsNum > 0
             ? 100
             : 0;
 
-        setDailyEarnings({
-          todayEarnings,
-          yesterdayEarnings,
+        console.log("Percentage change:", change);
+
+        setDailyEarnings(prevState => {
+          // Only update if the values are actually different
+          if (prevState.todayEarnings !== todayEarningsNum || prevState.yesterdayEarnings !== yesterdayEarningsNum) {
+            console.log("Updating dailyEarnings state from:", prevState, "to:", {
+              todayEarnings: todayEarningsNum,
+              yesterdayEarnings: yesterdayEarningsNum,
+            });
+            return {
+              todayEarnings: todayEarningsNum,
+              yesterdayEarnings: yesterdayEarningsNum,
+            };
+          }
+          console.log("Skipping dailyEarnings update - values unchanged");
+          return prevState;
         });
         setPercentageChange(change);
+
+        console.log("Daily earnings state updated:", {
+          todayEarnings: todayEarningsNum,
+          yesterdayEarnings: yesterdayEarningsNum,
+        });
 
         // Remove the incorrect reference to setEarningsData
         // Instead, we'll update the chart directly if needed
@@ -409,7 +440,7 @@ const fetchDailyEarningsByRange = async (range = "last7days") => {
         });
 
         // Update the chart with new data
-        setDailyEarningsChart((prev) => ({
+        setIntegratedDailyEarningsChart((prev) => ({
           ...prev,
           series: [
             {
@@ -447,7 +478,6 @@ const fetchDailyEarningsByRange = async (range = "last7days") => {
 
   // Fetch payments function (copied exactly from Payments)
   const fetchPayments = async () => {
-    setLoading(true);
     try {
       let response;
 
@@ -468,11 +498,9 @@ const fetchDailyEarningsByRange = async (range = "last7days") => {
       if (response.data.success) {
         setPayments(response.data.payments);
       }
-      setLoading(false);
     } catch (error) {
       console.error("Error fetching payments:", error);
       setError("Failed to fetch payment data");
-      setLoading(false);
     }
   };
 
@@ -649,6 +677,26 @@ const fetchDailyEarningsByRange = async (range = "last7days") => {
     },
   });
 
+  // Add this function to your component
+  const debugDates = () => {
+    console.log("=== DEBUG DATES ===");
+    console.log("Selected date:", selectedDate);
+    console.log("Date range:", dateRange);
+    console.log("Is date range active:", isDateRangeActive);
+    console.log("Daily earnings range:", dailyEarningsRange);
+  };
+
+  // Add this function to help debug date issues
+  const debugDate = (dateString) => {
+    console.log(`Debug date: ${dateString}`);
+    const date = new Date(dateString);
+    console.log(`  Original: ${dateString}`);
+    console.log(`  Date object: ${date}`);
+    console.log(`  ISO string: ${date.toISOString()}`);
+    console.log(`  Local date string: ${date.toLocaleDateString()}`);
+    console.log(`  Formatted (YYYY-MM-DD): ${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`);
+  };
+
   // Add this debugger function to help identify data issues
   const debugBackendData = (backendDates, earnings) => {
     console.log("=== DEBUG BACKEND DATA ===");
@@ -693,23 +741,23 @@ const fetchDailyEarningsByRange = async (range = "last7days") => {
 
     fetchAllData();
     
-    // Set up interval for real-time updates
+    // Set up interval for real-time updates  
     const interval = setInterval(() => {
-      fetchPayments();
       fetchOrders();
       fetchTables();
-      fetchDailyEarnings();
+      // Only fetch daily earnings every other interval to reduce conflicts
+      if (Date.now() % 60000 < 30000) { // Every minute, not every 30 seconds
+        fetchDailyEarnings();
+      }
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedDate, isDateRangeActive, dateRange]);
 
   // Fetch daily earnings range when range changes
   useEffect(() => {
-    if (!loading) {
-      fetchDailyEarningsByRange(dailyEarningsRange);
-    }
-  }, [dailyEarningsRange, loading]);
+    fetchDailyEarningsByRange(dailyEarningsRange);
+  }, [dailyEarningsRange]);
 
   // Create daily earnings chart data using payment data
   const generateDailyEarningsChart = (payments, period) => {
@@ -935,12 +983,12 @@ const fetchDailyEarningsByRange = async (range = "last7days") => {
       
       const revenueGrowth = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
 
-      // Update integrated charts data
-      setDailyEarnings({
-        todayEarnings: todayRevenue,
-        yesterdayEarnings: yesterdayRevenue,
-      });
-      setPercentageChange(revenueGrowth);
+      // Don't update dailyEarnings here as it's handled by fetchDailyEarnings API
+      // setDailyEarnings({
+      //   todayEarnings: todayRevenue,
+      //   yesterdayEarnings: yesterdayRevenue,
+      // });
+      // setPercentageChange(revenueGrowth);
 
       // Count total menu items
       const totalItems = categories.reduce((sum, category) => sum + (category.items?.length || 0), 0);
@@ -1887,10 +1935,10 @@ const fetchDailyEarningsByRange = async (range = "last7days") => {
                 ₹{dailyEarnings.todayEarnings.toFixed(2)}
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                {percentageChange.toFixed(2) >= 0
+                {percentageChange >= 0
                   ? "▲"
                   : "▼"}{" "}
-                {percentageChange.toFixed(2)}% compared to yesterday
+                {Math.abs(percentageChange).toFixed(2)}% compared to yesterday
               </p>
             </div>
             <div className="flex-1 bg-[#1a1a1a] p-2 sm:p-3 rounded-lg shadow-md">
