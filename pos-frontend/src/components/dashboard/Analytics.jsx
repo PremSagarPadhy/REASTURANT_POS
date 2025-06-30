@@ -1,28 +1,69 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
 import Chart from "react-apexcharts";
 import ReactApexChart from "react-apexcharts";
 import {
   getOrders,
   getTables,
   getInventoryItems,
-  getCategories,
-  getDailyEarnings
+  getCategories
 } from "../../https";
 import RadialChart from "./RadialChart";
 import { metricsData, itemsData } from "../../constants";
+
+const API_URL = 'https://reasturant-pos-backend.onrender.com/api';
 
 const Analytics = () => {
   const [selectedTimePeriod, setSelectedTimePeriod] = useState("last7days");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   
+  // Add state for data fetching
+  const [payments, setPayments] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [tables, setTables] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showAllPayments, setShowAllPayments] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // Get today's date in local timezone
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
+  // Add date range state
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    const endDate = new Date(today);
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - 7);
+    
+    // Format dates in local timezone
+    const formatLocalDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    return {
+      startDate: formatLocalDate(startDate),
+      endDate: formatLocalDate(endDate),
+    };
+  });
+  const [isDateRangeActive, setIsDateRangeActive] = useState(false);
+  
   // Add new state variables for the integrated charts
   const [dailyEarnings, setDailyEarnings] = useState({
     todayEarnings: 0,
     yesterdayEarnings: 0,
   });
+  const [totalEarnings, setTotalEarnings] = useState(0);
   const [percentageChange, setPercentageChange] = useState(0);
   const [dailyEarningsRange, setDailyEarningsRange] = useState("last7days");
   const [dailyEarningsData, setDailyEarningsData] = useState({
@@ -146,7 +187,7 @@ const Analytics = () => {
               <div class="text-center text-gray-400 mb-2">${formattedDate}</div>
               <div class="flex items-center">
                 <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-                <span>Daily Earnings: ₹${value.toFixed(2)}</span>
+                <span>Daily Earnings: ₹${(value || 0).toFixed(2)}</span>
               </div>
             </div>
           `;
@@ -183,6 +224,303 @@ const Analytics = () => {
       },
     },
   });
+
+  // Add new function to fetch total earnings (copied from Payments)
+  const fetchTotalEarnings = async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/payment/total-earnings`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setTotalEarnings(response.data.totalEarnings);
+      }
+    } catch (error) {
+      console.error("Error fetching total earnings:", error);
+      setError("Failed to fetch total earnings data");
+    }
+  };
+
+  const fetchDailyEarnings = async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/payment/daily-earnings?date=${selectedDate}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        const { todayEarnings, yesterdayEarnings } = response.data;
+
+        const change =
+          yesterdayEarnings > 0
+            ? ((todayEarnings - yesterdayEarnings) / yesterdayEarnings) * 100
+            : todayEarnings > 0
+            ? 100
+            : 0;
+
+        setDailyEarnings({
+          todayEarnings,
+          yesterdayEarnings,
+        });
+        setPercentageChange(change);
+
+        // Remove the incorrect reference to setEarningsData
+        // Instead, we'll update the chart directly if needed
+      }
+    } catch (error) {
+      console.error("Error fetching daily earnings:", error);
+      setError("Failed to fetch earnings data");
+    }
+  };
+
+  // Updated fetchDailyEarningsByRange function with proper date display (copied from Payments)
+const fetchDailyEarningsByRange = async (range = "last7days") => {
+    try {
+      console.log("Fetching earnings for range:", range);
+      const response = await axios.get(
+        `${API_URL}/payment/daily-earnings-range?range=${range}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        const { dates: backendDates, earnings } = response.data;
+        
+        console.log("Raw backend dates:", backendDates);
+        console.log("Raw backend earnings:", earnings);
+        
+        // Add debugging to check date issues
+        debugBackendData(backendDates, earnings);
+        
+        // Create a direct mapping from backend dates to their earnings
+        const directDateMap = {};
+        
+        // First, map the backend data directly
+        for (let i = 0; i < backendDates.length; i++) {
+          directDateMap[backendDates[i]] = earnings[i] || 0;
+        }
+        
+        // Make sure today's date is included and visible in the debug logs
+        const today = (() => {
+          const date = new Date();
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        })();
+        console.log("Today's date mapping:", today, "->", directDateMap[today] || "not found");
+        
+        // Now calculate the date range we need to display
+        let startDate, endDate;
+        const todayDate = new Date();
+        // Don't set hours to avoid timezone issues - work with date objects directly
+        
+        switch(range) {
+          case "today":
+            startDate = new Date(todayDate);
+            endDate = new Date(todayDate);
+            break;
+          case "yesterday":
+            startDate = new Date(todayDate);
+            startDate.setDate(startDate.getDate() - 1);
+            endDate = new Date(startDate);
+            break;
+          case "last7days":
+            startDate = new Date(todayDate);
+            startDate.setDate(startDate.getDate() - 6); // 6 days back + today = 7 days
+            endDate = new Date(todayDate);
+            break;
+          case "last30days":
+            startDate = new Date(todayDate);
+            startDate.setDate(startDate.getDate() - 29);
+            endDate = new Date(todayDate);
+            break;
+          case "last90days":
+            startDate = new Date(todayDate);
+            startDate.setDate(startDate.getDate() - 89);
+            endDate = new Date(todayDate);
+            break;
+          default:
+            startDate = new Date(todayDate);
+            startDate.setDate(startDate.getDate() - 6); // default to 7 days
+            endDate = new Date(todayDate);
+        }
+        
+        // Helper function to format date in local timezone
+        const formatLocalDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
+        // Generate all dates in the range with correct formatting
+        const sortedDates = [];
+        const sortedDisplayDates = [];
+        const sortedEarnings = [];
+        
+        // Create a new Date object to iterate through the range
+        const currentDate = new Date(startDate);
+        
+        // Loop through each date in the range
+        while (currentDate <= endDate) {
+          // Format the date as YYYY-MM-DD for comparison with backend data using local timezone
+          const dateStr = formatLocalDate(currentDate);
+          
+          // Format the date for display
+          const displayDate = currentDate.toLocaleDateString('en-US', {
+            day: 'numeric',
+            month: 'short',
+          });
+          
+          sortedDates.push(dateStr);
+          sortedDisplayDates.push(displayDate);
+          
+          // Get the earnings for this date from our map, or use 0 if no data
+          sortedEarnings.push(directDateMap[dateStr] || 0);
+          
+          // Move to the next day
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        console.log("Processed dates:", sortedDates);
+        console.log("Formatted display dates:", sortedDisplayDates);
+        console.log("Processed earnings:", sortedEarnings);
+
+        // Calculate percentage change
+        let percentageChange = 0;
+        if (sortedEarnings.length >= 2) {
+          const latestDayEarnings = sortedEarnings[sortedEarnings.length - 1];
+          const previousDayEarnings = sortedEarnings[sortedEarnings.length - 2];
+          
+          if (previousDayEarnings > 0) {
+            percentageChange = ((latestDayEarnings - previousDayEarnings) / previousDayEarnings) * 100;
+          } else if (latestDayEarnings > 0) {
+            percentageChange = 100;
+          }
+        }
+
+        // Update state with the processed data
+        setDailyEarningsData({
+          labels: sortedDates,
+          displayLabels: sortedDisplayDates,
+          values: sortedEarnings,
+          percentageChange: percentageChange,
+        });
+
+        // Update the chart with new data
+        setDailyEarningsChart((prev) => ({
+          ...prev,
+          series: [
+            {
+              ...prev.series[0],
+              data: sortedEarnings,
+            },
+          ],
+          options: {
+            ...prev.options,
+            xaxis: {
+              ...prev.options.xaxis,
+              categories: sortedDates,
+              labels: {
+                show: true,
+                formatter: function(value) {
+                  // Find the index of this value in the sorted dates
+                  const idx = sortedDates.indexOf(value);
+                  // Return the corresponding display date
+                  return idx >= 0 ? sortedDisplayDates[idx] : '';
+                },
+                style: {
+                  colors: '#9ca3af',
+                  fontSize: '10px',
+                }
+              }
+            }
+          },
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching daily earnings range:", error);
+      setError("Failed to fetch daily earnings data");
+    }
+  };
+
+  // Fetch payments function (copied exactly from Payments)
+  const fetchPayments = async () => {
+    setLoading(true);
+    try {
+      let response;
+
+      if (isDateRangeActive) {
+        response = await axios.get(
+          `${API_URL}/payment/range?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`,
+          { withCredentials: true }
+        );
+      } else {
+        response = await axios.get(
+          showAllPayments
+            ? `${API_URL}/payment/all`
+            : `${API_URL}/payment?date=${selectedDate}`,
+          { withCredentials: true }
+        );
+      }
+
+      if (response.data.success) {
+        setPayments(response.data.payments);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+      setError("Failed to fetch payment data");
+      setLoading(false);
+    }
+  };
+
+  // Fetch other data
+  const fetchOrders = async () => {
+    try {
+      const response = await getOrders();
+      if (response?.data?.data) {
+        setOrders(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
+  };
+
+  const fetchTables = async () => {
+    try {
+      const response = await getTables();
+      if (response?.data?.data) {
+        setTables(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching tables:", error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await getCategories();
+      if (response?.data?.data) {
+        setCategories(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
+  const fetchInventory = async () => {
+    try {
+      const response = await getInventoryItems();
+      if (response?.data) {
+        setInventory(Array.isArray(response.data) ? response.data : response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching inventory:", error);
+      setInventory([]);
+    }
+  };
 
   // Add dropdown refs for integrated charts
   const dropdownRef = useRef(null);
@@ -311,44 +649,75 @@ const Analytics = () => {
     },
   });
 
-  // Fetch Orders
-  const { data: ordersData, isLoading: ordersLoading } = useQuery({
-    queryKey: ["orders"],
-    queryFn: getOrders,
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
-
-  // Fetch Tables
-  const { data: tablesData, isLoading: tablesLoading } = useQuery({
-    queryKey: ["tables"],
-    queryFn: getTables,
-    refetchInterval: 30000,
-  });
-
-  // Fetch Categories
-  const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
-    queryKey: ["categories"],
-    queryFn: getCategories,
-    refetchInterval: 60000,
-  });
-
-  // Fetch Inventory with fallback
-  const { data: inventoryData, isLoading: inventoryLoading } = useQuery({
-    queryKey: ["inventory"],
-    queryFn: async () => {
-      try {
-        return await getInventoryItems();
-      } catch (error) {
-        console.log("Inventory API not available, using empty data");
-        return { data: [] };
+  // Add this debugger function to help identify data issues
+  const debugBackendData = (backendDates, earnings) => {
+    console.log("=== DEBUG BACKEND DATA ===");
+    const today = new Date().toISOString().split('T')[0];
+    console.log("Today's date (ISO format):", today);
+    console.log("Does backend include today?", backendDates.includes(today));
+    
+    // Check if any dates correspond to today
+    backendDates.forEach((date, index) => {
+      if (date === today) {
+        console.log(`Found today at index ${index} with earnings: ${earnings[index]}`);
       }
-    },
-    refetchInterval: 60000,
-  });
+    });
+    
+    // Check if the date formatting is consistent
+    console.log("Backend date formats:");
+    backendDates.forEach(date => {
+      console.log(`${date} -> type: ${typeof date}`);
+    });
+  };
 
-  // Create simple daily earnings chart data using existing API
-  const generateDailyEarningsChart = (orders, period) => {
-    const days = period === "last7days" ? 7 : period === "last30days" ? 30 : 90;
+  // Fetch all data on component mount
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchPayments(),
+          fetchOrders(),
+          fetchTables(),
+          fetchCategories(),
+          fetchInventory(),
+          fetchTotalEarnings(),
+          fetchDailyEarnings()
+        ]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+    
+    // Set up interval for real-time updates
+    const interval = setInterval(() => {
+      fetchPayments();
+      fetchOrders();
+      fetchTables();
+      fetchDailyEarnings();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch daily earnings range when range changes
+  useEffect(() => {
+    if (!loading) {
+      fetchDailyEarningsByRange(dailyEarningsRange);
+    }
+  }, [dailyEarningsRange, loading]);
+
+  // Create daily earnings chart data using payment data
+  const generateDailyEarningsChart = (payments, period) => {
+    if (!payments || !payments.length) {
+      return { values: [], labels: [], displayLabels: [], percentageChange: 0 };
+    }
+
+    const days = period === "last7days" ? 7 : period === "last30days" ? 30 : period === "last3months" ? 90 : period === "last6months" ? 180 : 7;
     const today = new Date();
     const chartData = [];
     const labels = [];
@@ -359,21 +728,93 @@ const Analytics = () => {
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       
-      const dayOrders = orders.filter(order => 
-        new Date(order.createdAt).toISOString().split('T')[0] === dateStr
-      );
+      const dayPayments = payments.filter(payment => {
+        const paymentDate = new Date(payment.createdAt).toISOString().split('T')[0];
+        return paymentDate === dateStr && payment.status === 'completed';
+      });
+      
+      const dayRevenue = dayPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+      
+      chartData.push(dayRevenue);
+      labels.push(dateStr);
+      
+      if (period === "last7days" || period === "last30days") {
+        displayLabels.push(date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        }));
+      } else {
+        displayLabels.push(date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric'
+        }));
+      }
+    }
+
+    // Calculate percentage change
+    let percentageChange = 0;
+    if (chartData.length >= 2) {
+      const current = chartData[chartData.length - 1] || 0;
+      const previous = chartData[chartData.length - 2] || 0;
+      if (previous > 0) {
+        percentageChange = ((current - previous) / previous) * 100;
+      }
+    }
+
+    return { values: chartData, labels, displayLabels, percentageChange };
+  };
+
+  // Fallback function to generate chart data from orders when payment data is not available
+  const generateDailyEarningsChartFromOrders = (orders, period) => {
+    if (!orders || !orders.length) {
+      return { values: [], labels: [], displayLabels: [], percentageChange: 0 };
+    }
+
+    const days = period === "last7days" ? 7 : period === "last30days" ? 30 : period === "last3months" ? 90 : period === "last6months" ? 180 : 7;
+    const today = new Date();
+    const chartData = [];
+    const labels = [];
+    const displayLabels = [];
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const dayOrders = orders.filter(order => {
+        const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
+        return orderDate === dateStr;
+      });
       
       const dayRevenue = dayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
       
       chartData.push(dayRevenue);
       labels.push(dateStr);
-      displayLabels.push(date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
-      }));
+      
+      if (period === "last7days" || period === "last30days") {
+        displayLabels.push(date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        }));
+      } else {
+        displayLabels.push(date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric'
+        }));
+      }
     }
 
-    return { values: chartData, labels, displayLabels };
+    // Calculate percentage change
+    let percentageChange = 0;
+    if (chartData.length >= 2) {
+      const current = chartData[chartData.length - 1] || 0;
+      const previous = chartData[chartData.length - 2] || 0;
+      if (previous > 0) {
+        percentageChange = ((current - previous) / previous) * 100;
+      }
+    }
+
+    return { values: chartData, labels, displayLabels, percentageChange };
   };
 
   // Add functions for integrated charts dropdown
@@ -415,31 +856,7 @@ const Analytics = () => {
   const handleChartRangeChange = async (newRange) => {
     try {
       setDailyEarningsRange(newRange);
-      // Update integrated chart data based on existing orders data
-      if (ordersData?.data?.data) {
-        const chartData = generateDailyEarningsChart(ordersData.data.data, newRange);
-        setDailyEarningsData({
-          labels: chartData.labels,
-          displayLabels: chartData.displayLabels,
-          values: chartData.values,
-          percentageChange: 0,
-        });
-
-        setIntegratedDailyEarningsChart(prev => ({
-          ...prev,
-          series: [{
-            ...prev.series[0],
-            data: chartData.values,
-          }],
-          options: {
-            ...prev.options,
-            xaxis: {
-              ...prev.options.xaxis,
-              categories: chartData.labels,
-            },
-          },
-        }));
-      }
+      await fetchDailyEarningsByRange(newRange);
     } catch (error) {
       console.error("Error changing chart range:", error);
     }
@@ -447,12 +864,12 @@ const Analytics = () => {
 
   // Calculate real-time statistics
   useEffect(() => {
-    if (ordersData?.data?.data && tablesData?.data?.data) {
-      const orders = ordersData.data.data;
-      const tables = tablesData.data.data;
-      const categories = categoriesData?.data?.data || [];
-      // Handle inventory data - it might be direct array or wrapped
-      const inventory = Array.isArray(inventoryData?.data) ? inventoryData.data : inventoryData?.data?.data || [];
+    if (orders.length > 0 && tables.length > 0) {
+      // Use payment data if available, otherwise fall back to order data
+      let usePaymentData = payments.length > 0;
+      
+      // Handle inventory data
+      const inventoryItems = inventory || [];
 
       // Calculate order statistics
       const orderStatistics = orders.reduce(
@@ -466,30 +883,56 @@ const Analytics = () => {
         { inProgress: 0, ready: 0, completed: 0, total: 0 }
       );
 
-      // Calculate revenue
-      const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-      const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+      // Calculate revenue - use payment data if available, otherwise order data
+      let totalRevenue, avgOrderValue, completedPayments;
+      
+      if (usePaymentData) {
+        completedPayments = payments.filter(payment => payment.status === 'completed');
+        totalRevenue = completedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+        avgOrderValue = completedPayments.length > 0 ? totalRevenue / completedPayments.length : 0;
+      } else {
+        // Fallback to order data
+        totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+        avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+        completedPayments = orders.filter(order => order.orderStatus === 'Completed');
+      }
 
       // Calculate table statistics
       const availableTables = tables.filter(table => table.status === "Available").length;
       const bookedTables = tables.filter(table => table.status === "Booked").length;
 
       // Calculate inventory statistics
-      const lowStockItems = inventory.filter(item => item.quantity <= item.minQuantity).length;
+      const lowStockItems = inventoryItems.filter(item => item.quantity <= item.minQuantity).length;
 
       // Calculate today's and yesterday's revenue
       const today = new Date().toISOString().split('T')[0];
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
       
-      const todayOrders = orders.filter(order => 
-        new Date(order.createdAt).toISOString().split('T')[0] === today
-      );
-      const yesterdayOrders = orders.filter(order => 
-        new Date(order.createdAt).toISOString().split('T')[0] === yesterday
-      );
-
-      const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-      const yesterdayRevenue = yesterdayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      let todayRevenue, yesterdayRevenue;
+      
+      if (usePaymentData) {
+        const todayPayments = completedPayments.filter(payment => 
+          new Date(payment.createdAt).toISOString().split('T')[0] === today
+        );
+        const yesterdayPayments = completedPayments.filter(payment => 
+          new Date(payment.createdAt).toISOString().split('T')[0] === yesterday
+        );
+        
+        todayRevenue = todayPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+        yesterdayRevenue = yesterdayPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+      } else {
+        // Fallback to order data
+        const todayOrders = orders.filter(order => 
+          new Date(order.createdAt).toISOString().split('T')[0] === today
+        );
+        const yesterdayOrders = orders.filter(order => 
+          new Date(order.createdAt).toISOString().split('T')[0] === yesterday
+        );
+        
+        todayRevenue = todayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+        yesterdayRevenue = yesterdayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      }
+      
       const revenueGrowth = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
 
       // Update integrated charts data
@@ -498,30 +941,6 @@ const Analytics = () => {
         yesterdayEarnings: yesterdayRevenue,
       });
       setPercentageChange(revenueGrowth);
-
-      // Update integrated daily earnings chart
-      const integratedChartData = generateDailyEarningsChart(orders, dailyEarningsRange);
-      setDailyEarningsData({
-        labels: integratedChartData.labels,
-        displayLabels: integratedChartData.displayLabels,
-        values: integratedChartData.values,
-        percentageChange: revenueGrowth,
-      });
-
-      setIntegratedDailyEarningsChart(prev => ({
-        ...prev,
-        series: [{
-          ...prev.series[0],
-          data: integratedChartData.values,
-        }],
-        options: {
-          ...prev.options,
-          xaxis: {
-            ...prev.options.xaxis,
-            categories: integratedChartData.labels,
-          },
-        },
-      }));
 
       // Count total menu items
       const totalItems = categories.reduce((sum, category) => sum + (category.items?.length || 0), 0);
@@ -548,8 +967,11 @@ const Analytics = () => {
         series: [orderStatistics.inProgress, orderStatistics.ready, orderStatistics.completed],
       }));
 
-      // Update daily earnings chart with calculated data
-      const originalChartData = generateDailyEarningsChart(orders, selectedTimePeriod);
+      // Update daily earnings chart with appropriate data
+      const originalChartData = usePaymentData ? 
+        generateDailyEarningsChart(payments, selectedTimePeriod) :
+        generateDailyEarningsChartFromOrders(orders, selectedTimePeriod);
+        
       setDailyEarningsChart(prev => ({
         ...prev,
         series: [{
@@ -565,7 +987,7 @@ const Analytics = () => {
         },
       }));
     }
-  }, [ordersData, tablesData, categoriesData, inventoryData, selectedTimePeriod]);
+  }, [orders, tables, categories, inventory, payments, selectedTimePeriod, dailyEarningsRange]);
 
   const timePeriods = [
     { value: "last7days", label: "Last 7 Days" },
@@ -574,7 +996,7 @@ const Analytics = () => {
     { value: "last6months", label: "Last 6 Months" },
   ];
 
-  const isLoading = ordersLoading || tablesLoading;
+  const isLoading = loading;
 
   if (isLoading) {
     return (
@@ -870,10 +1292,10 @@ const Analytics = () => {
           </motion.div>
 
           <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="py-2 sm:py-3 h-48 sm:h-52 md:h-54" 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-3 sm:pt-4 mt-3 sm:mt-4 gap-3 sm:gap-0"
           >
             <RadialChart orderStats={orderStats} />
           </motion.div>
@@ -901,7 +1323,7 @@ const Analytics = () => {
                 whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
                 whileTap={{ scale: 0.95 }}
                 href="#"
-                className="uppercase text-xs sm:text-sm font-semibold inline-flex items-center rounded-lg text-[#025cca] hover:text-[#0273fa] px-2 sm:px-3 py-2"
+                className="uppercase text-xs sm:text-sm font-semibold inline-flex items-center rounded-lg text-[#025cca] hover:text-[#0273fa] px-3 sm:px-3 py-2"
               >
                 <span className="hidden sm:inline">Detailed report</span>
                 <span className="sm:hidden">Report</span>
@@ -1285,7 +1707,7 @@ const Analytics = () => {
                             <div class="text-center text-gray-400 mb-2">${formattedDate}</div>
                             <div class="flex items-center">
                               <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-                              <span>Daily Earnings: ₹${value.toFixed(2)}</span>
+                              <span>Daily Earnings: ₹${(value || 0).toFixed(2)}</span>
                             </div>
                           </div>
                         `;
@@ -1588,11 +2010,11 @@ const Analytics = () => {
                         <div class="text-center text-gray-400 mb-2">${formattedDate}</div>
                         <div class="flex items-center mb-1">
                           <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-                          <span>Today: ₹${todayValue.toFixed(2)}</span>
+                          <span>Today: ₹${(todayValue || 0).toFixed(2)}</span>
                         </div>
                         <div class="flex items-center">
                           <span class="inline-block w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
-                          <span>Previous Day: ₹${previousDayValue.toFixed(2)}</span>
+                          <span>Previous Day: ₹${(previousDayValue || 0).toFixed(2)}</span>
                         </div>
                       </div>
                     `;
