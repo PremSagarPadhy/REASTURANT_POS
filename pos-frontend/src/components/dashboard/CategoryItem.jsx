@@ -39,36 +39,38 @@ const CategoryItem = ({ category }) => {
   return (
     <>
       <div 
-        className="relative bg-[#2a2a2a] p-4 rounded-lg shadow-md hover:bg-[#333] transition-colors"
+        className="relative bg-[#2a2a2a] p-3 sm:p-4 rounded-lg shadow-md hover:bg-[#333] transition-colors w-full"
         style={{ borderLeft: `4px solid ${category.bgColor}` }}
       >
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <span className="text-2xl">{category.icon}</span>
-            <h3 className="font-medium text-white">{category.name}</h3>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+            <span className="text-xl sm:text-2xl flex-shrink-0">{category.icon}</span>
+            <h3 className="font-medium text-white text-sm sm:text-base truncate">{category.name}</h3>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 flex-shrink-0 self-end sm:self-auto">
             <button 
               onClick={handleEdit}
-              className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              className="p-1.5 sm:p-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm sm:text-base"
+              title="Edit Category"
             >
-              <IoCreate />
+              <IoCreate className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
             <button 
               onClick={handleDelete}
               disabled={isDeleting}
-              className="p-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              className="p-1.5 sm:p-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
+              title="Delete Category"
             >
               {isDeleting ? (
-                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span className="inline-block w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               ) : (
-                <IoTrash />
+                <IoTrash className="w-3 h-3 sm:w-4 sm:h-4" />
               )}
             </button>
           </div>
         </div>
-        <div className="mt-2">
-          <span className="text-sm text-gray-400">Items: {category.items?.length || 0}</span>
+        <div className="mt-2 sm:mt-3">
+          <span className="text-xs sm:text-sm text-gray-400">Items: {category.items?.length || 0}</span>
         </div>
       </div>
       

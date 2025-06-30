@@ -17,6 +17,8 @@ const RecentOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage] = useState(6); // Fixed to 6 rows per page
 
   const orderStatusUpdateMutation = useMutation({
     mutationFn: ({ orderId, orderStatus }) => updateOrderStatus({ orderId, orderStatus }),
@@ -77,6 +79,16 @@ const RecentOrders = () => {
     queryFn: getOrders,
   });
 
+  // Handle page change
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
   if (isError) {
     enqueueSnackbar("Something went wrong!", { variant: "error" });
   }
@@ -97,6 +109,12 @@ const RecentOrders = () => {
         return matchesSearch && matchesStatus;
       })
     : [];
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
     
   return (
     <motion.div 
@@ -224,7 +242,7 @@ const RecentOrders = () => {
             </thead>
             <tbody>
               <AnimatePresence>
-                {filteredOrders.map((order, index) => (
+                {paginatedOrders.map((order, index) => (
                   <motion.tr 
                     key={order._id} 
                     initial={{ opacity: 0, y: 20 }}
@@ -289,6 +307,28 @@ const RecentOrders = () => {
                 ))}
               </AnimatePresence>
 
+              {paginatedOrders.length === 0 && filteredOrders.length > 0 && (
+                <motion.tr
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <td colSpan="5" className="p-4 text-center text-[#ababab]">
+                    <motion.div
+                      initial={{ y: -10 }}
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{ 
+                        duration: 2,
+                        repeat: Infinity,
+                        repeatType: "reverse"
+                      }}
+                    >
+                      No items on this page
+                    </motion.div>
+                  </td>
+                </motion.tr>
+              )}
+
               {filteredOrders.length === 0 && (
                 <motion.tr
                   initial={{ opacity: 0 }}
@@ -327,30 +367,54 @@ const RecentOrders = () => {
             whileHover={{ scale: 1.05 }}
             className="text-[#ababab] text-sm"
           >
-            Showing {filteredOrders.length} of {resData?.data?.data?.length || 0} orders
+            Showing {startIndex + 1}-{Math.min(endIndex, filteredOrders.length)} of {filteredOrders.length} orders
           </motion.span>
           
           <div className="flex gap-1">
             <motion.button
-              whileHover={{ scale: 1.1, backgroundColor: "#3d3d3d" }}
+              whileHover={{ scale: 1.1, backgroundColor: currentPage === 1 ? "#333" : "#3d3d3d" }}
               whileTap={{ scale: 0.95 }}
-              className="px-3 py-1 rounded-md bg-[#333] text-[#ababab] border border-[#4a4a4a]"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded-md border border-[#4a4a4a] ${
+                currentPage === 1 
+                  ? "bg-[#333] text-[#666] cursor-not-allowed" 
+                  : "bg-[#333] text-[#ababab] hover:text-[#f5f5f5]"
+              }`}
             >
               Previous
             </motion.button>
             
-            <motion.button
-              whileHover={{ scale: 1.1, backgroundColor: "#025cca" }}
-              whileTap={{ scale: 0.95 }}
-              className="px-3 py-1 rounded-md bg-[#333] text-[#f5f5f5] border border-[#4a4a4a]"
-            >
-              1
-            </motion.button>
+            {/* Generate page numbers */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <motion.button
+                key={pageNum}
+                whileHover={{ 
+                  scale: 1.1, 
+                  backgroundColor: pageNum === currentPage ? "#025cca" : "#3d3d3d" 
+                }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handlePageChange(pageNum)}
+                className={`px-3 py-1 rounded-md border border-[#4a4a4a] ${
+                  pageNum === currentPage
+                    ? "bg-[#025cca] text-[#f5f5f5]"
+                    : "bg-[#333] text-[#ababab] hover:text-[#f5f5f5]"
+                }`}
+              >
+                {pageNum}
+              </motion.button>
+            ))}
             
             <motion.button
-              whileHover={{ scale: 1.1, backgroundColor: "#3d3d3d" }}
+              whileHover={{ scale: 1.1, backgroundColor: currentPage === totalPages ? "#333" : "#3d3d3d" }}
               whileTap={{ scale: 0.95 }}
-              className="px-3 py-1 rounded-md bg-[#333] text-[#ababab] border border-[#4a4a4a]"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded-md border border-[#4a4a4a] ${
+                currentPage === totalPages 
+                  ? "bg-[#333] text-[#666] cursor-not-allowed" 
+                  : "bg-[#333] text-[#ababab] hover:text-[#f5f5f5]"
+              }`}
             >
               Next
             </motion.button>

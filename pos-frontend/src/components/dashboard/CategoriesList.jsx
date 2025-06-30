@@ -31,29 +31,38 @@ const CategoriesList = () => {
   }
   
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Menu Categories</h2>
+    <div className="p-3 sm:p-4 lg:p-6 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-bold text-white truncate">Menu Categories</h2>
+          <p className="text-sm text-gray-400 mt-1">Manage your restaurant categories</p>
+        </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md transition-colors"
+          className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 sm:px-4 rounded-md transition-colors text-sm sm:text-base whitespace-nowrap"
         >
-          <IoAddCircle size={20} />
-          Add Category
+          <IoAddCircle size={18} className="sm:w-5 sm:h-5" />
+          <span className="hidden sm:inline">Add Category</span>
+          <span className="sm:hidden">Add</span>
         </button>
       </div>
       
       {categories.length === 0 ? (
-        <div className="p-4 bg-gray-800 text-gray-300 rounded text-center">
-          No categories found. Create your first category!
+        <div className="p-4 sm:p-6 bg-gray-800 text-gray-300 rounded text-center">
+          <div className="text-4xl sm:text-6xl mb-4">📋</div>
+          <h3 className="text-lg sm:text-xl font-medium mb-2">No categories found</h3>
+          <p className="text-sm sm:text-base">Create your first category to get started!</p>
         </div>
+        
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {categories.map(category => (
             <CategoryItem key={category.id} category={category} />
           ))}
         </div>
       )}
+      
+      <div className="pb-36"></div>
       
       {isModalOpen && (
         <CategoryModal setIsCategoryModalOpen={setIsModalOpen} />

@@ -1729,6 +1729,7 @@ const Payments = () => {
           </div>
         )}
       </motion.div>
+      <div className="pb-32"></div>
     </motion.div>
   );
 };

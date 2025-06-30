@@ -168,12 +168,12 @@ const ManageItems = () => {
     }
 
     return (
-        <div className="container mx-auto p-4">
-            <div className="grid grid-cols-4 gap-4 px-10 py-4 w-[100%]">
+        <div className="container mx-auto p-2 sm:p-4 lg:p-6 min-h-screen">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 px-2 sm:px-4 lg:px-6 xl:px-10 py-4 w-full">
                 {categories?.map((menu) => (
                     <motion.div
                         key={menu.id}
-                        className="flex flex-col items-start justify-between p-4 rounded-lg h-[100px] cursor-pointer"
+                        className="flex flex-col items-start justify-between p-3 sm:p-4 rounded-lg h-[80px] sm:h-[100px] cursor-pointer"
                         style={{ backgroundColor: menu.bgColor }}
                         onClick={() => setSelected(menu)}
                         whileHover={{ scale: 1.03 }}
@@ -181,8 +181,9 @@ const ManageItems = () => {
                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
                         <div className="flex items-center justify-between w-full">
-                            <h1 className="text-[#f5f5f5] text-lg font-semibold">
-                                {menu.icon} {menu.name}
+                            <h1 className="text-[#f5f5f5] text-sm sm:text-lg font-semibold truncate pr-2">
+                                <span className="text-base sm:text-lg">{menu.icon}</span>
+                                <span className="ml-1 sm:ml-2">{menu.name}</span>
                             </h1>
                             <AnimatePresence>
                                 {selected?.id === menu.id && (
@@ -191,40 +192,48 @@ const ManageItems = () => {
                                         animate={{ scale: 1, opacity: 1 }}
                                         exit={{ scale: 0, opacity: 0 }}
                                         transition={{ duration: 0.2 }}
+                                        className="flex-shrink-0"
                                     >
-                                        <GrRadialSelected className="text-white" size={20} />
+                                        <GrRadialSelected className="text-white" size={16} />
                                     </motion.div>
                                 )}
                             </AnimatePresence>
                         </div>
-                        <p className="text-[#ababab] text-sm font-semibold">
+                        <p className="text-[#ababab] text-xs sm:text-sm font-semibold">
                             {menu.items?.length || 0} Items
                         </p>
                     </motion.div>
                 ))}
             </div>
 
-            <hr className="border-[#2a2a2a] border-t-2 mt-4" />
+            <hr className="border-[#2a2a2a] border-t-2 mt-4 mx-2 sm:mx-4 lg:mx-6 xl:mx-10" />
 
-            <div className="flex justify-between items-center px-10 py-4">
-                <h2 className="text-xl font-semibold text-white">{selected?.name} Items</h2>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center px-2 sm:px-4 lg:px-6 xl:px-10 py-4 gap-3 sm:gap-0">
+                <div className="min-w-0">
+                    <h2 className="text-lg sm:text-xl font-semibold text-white truncate">
+                        {selected?.name} Items
+                    </h2>
+                    <p className="text-sm text-gray-400">Manage items in this category</p>
+                </div>
                 <motion.button 
                     onClick={() => handleOpenModal()} 
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm sm:text-base whitespace-nowrap"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                 >
-                    <FaPlus /> Add New Item
+                    <FaPlus className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Add New Item</span>
+                    <span className="sm:hidden">Add Item</span>
                 </motion.button>
             </div>
 
-            <div className="grid grid-cols-4 gap-4 px-10 py-4 w-[100%]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 px-2 sm:px-4 lg:px-6 xl:px-10 py-4 w-full">
                 <AnimatePresence mode="wait">
                     {selected?.items?.length > 0 ? (
                         selected.items.map((item) => (
                             <motion.div
                                 key={item.id}
-                                className="flex flex-col items-start justify-between p-4 rounded-lg h-[150px] cursor-pointer bg-[#1f1f1f] hover:bg-[#2a2a2a]"
+                                className="flex flex-col items-start justify-between p-3 sm:p-4 rounded-lg h-[120px] sm:h-[150px] cursor-pointer bg-[#1f1f1f] hover:bg-[#2a2a2a]"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
@@ -233,92 +242,101 @@ const ManageItems = () => {
                                 whileTap={{ scale: 0.98 }}
                             >
                                 <div className="flex items-start justify-between w-full">
-                                    <h1 className="text-[#f5f5f5] text-lg font-semibold">
+                                    <h1 className="text-[#f5f5f5] text-sm sm:text-lg font-semibold truncate pr-2 flex-1">
                                         {item.name}
                                     </h1>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                                         <motion.button 
                                             onClick={() => handleOpenModal(item)} 
                                             className="text-[#02cacf] p-1 rounded-lg"
                                             whileHover={{ backgroundColor: "#02cacf20" }}
                                             whileTap={{ scale: 0.9 }}
+                                            title="Edit Item"
                                         >
-                                            <FaEdit size={18} />
+                                            <FaEdit size={14} className="sm:w-[18px] sm:h-[18px]" />
                                         </motion.button>
                                         <motion.button 
                                             onClick={() => handleDeleteItem(item)} 
                                             className="text-[#ca0202] p-1 rounded-lg"
                                             whileHover={{ backgroundColor: "#ca020220" }}
                                             whileTap={{ scale: 0.9 }}
+                                            title="Delete Item"
                                         >
-                                            <FaTrash size={18} />
+                                            <FaTrash size={14} className="sm:w-[18px] sm:h-[18px]" />
                                         </motion.button>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between w-full">
-                                    <p className="text-[#f5f5f5] text-xl font-bold">
+                                <div className="flex items-center justify-between w-full mt-auto">
+                                    <p className="text-[#f5f5f5] text-lg sm:text-xl font-bold">
                                         ₹{item.price}
                                     </p>
-                                    {item.category === "Veg" ? (
-                                        <VegBadge />
-                                    ) : item.category === "Non-Veg" ? (
-                                        <NonVegBadge />
-                                    ) : item.category ? (
-                                        <span className="text-xs bg-gray-700 px-2 py-1 rounded">
-                                            {item.category}
-                                        </span>
-                                    ) : null}
+                                    <div className="flex-shrink-0">
+                                        {item.category === "Veg" ? (
+                                            <VegBadge />
+                                        ) : item.category === "Non-Veg" ? (
+                                            <NonVegBadge />
+                                        ) : item.category ? (
+                                            <span className="text-xs bg-gray-700 px-2 py-1 rounded">
+                                                {item.category}
+                                            </span>
+                                        ) : null}
+                                    </div>
                                 </div>
                             </motion.div>
                         ))
                     ) : (
                         <motion.div 
-                            className="col-span-4 text-center text-gray-400 py-8"
+                            className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4 text-center text-gray-400 py-8"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.3 }}
                         >
-                            No items available in this category.
+                            <div className="text-4xl sm:text-6xl mb-4">🍽️</div>
+                            <h3 className="text-lg sm:text-xl font-medium mb-2">No items available</h3>
+                            <p className="text-sm sm:text-base">Add your first item to this category!</p>
                         </motion.div>
                     )}
                 </AnimatePresence>
             </div>
 
+            <div className="pb-24"></div>
+
             {/* Modal with animation */}
             <AnimatePresence>
                 {isModalOpen && (
                     <motion.div 
-                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                     >
                         <motion.div 
-                            className="bg-[#1f1f1f] p-6 rounded-lg w-full max-w-md"
+                            className="bg-[#1f1f1f] p-4 sm:p-6 rounded-lg w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto"
                             initial={{ y: 50, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 50, opacity: 0 }}
                             transition={{ type: "spring", damping: 25, stiffness: 300 }}
                         >
-                            <h2 className="text-xl font-bold text-white mb-4">
+                            <h2 className="text-lg sm:text-xl font-bold text-white mb-4">
                                 {editingItem ? 'Edit Item' : 'Add New Item'}
                             </h2>
                             
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div>
-                                    <label className="block text-gray-300 mb-1">Item Name</label>
+                                    <label className="block text-gray-300 mb-1 text-sm sm:text-base">Item Name</label>
                                     <input
                                         type="text"
                                         name="name"
                                         value={formData.name}
                                         onChange={handleChange}
-                                        className="w-full bg-[#2a2a2a] text-white p-2 rounded border border-gray-700"
+                                        className="w-full bg-[#2a2a2a] text-white p-2 sm:p-3 rounded border border-gray-700 text-sm sm:text-base"
+                                        placeholder="Enter item name"
                                         required
                                     />
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-gray-300 mb-1">Price (₹)</label>
+                                    <label className="block text-gray-300 mb-1 text-sm sm:text-base">Price (₹)</label>
                                     <input
                                         type="number"
                                         name="price"
@@ -326,39 +344,46 @@ const ManageItems = () => {
                                         onChange={handleChange}
                                         step="0.01"
                                         min="0"
-                                        className="w-full bg-[#2a2a2a] text-white p-2 rounded border border-gray-700"
+                                        className="w-full bg-[#2a2a2a] text-white p-2 sm:p-3 rounded border border-gray-700 text-sm sm:text-base"
+                                        placeholder="Enter price"
                                         required
                                     />
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-gray-300 mb-1">Food Type</label>
-                                    <div className="flex items-center gap-4 mt-2">
-                                        <div className="flex flex-col items-center">
-                                            <VegBadge 
-                                                onClick={handleVegClick} 
-                                            />
+                                    <label className="block text-gray-300 mb-1 text-sm sm:text-base">Food Type</label>
+                                    <div className="flex items-center gap-3 sm:gap-4 mt-2">
+                                        <motion.div 
+                                            className="flex flex-col items-center cursor-pointer"
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={handleVegClick}
+                                        >
+                                            <VegBadge />
                                             <span className="text-xs text-gray-300 mt-1">Veg</span>
-                                        </div>
-                                        <div className="flex flex-col items-center">
-                                            <NonVegBadge 
-                                                onClick={handleNonVegClick} 
-                                            />
+                                        </motion.div>
+                                        <motion.div 
+                                            className="flex flex-col items-center cursor-pointer"
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={handleNonVegClick}
+                                        >
+                                            <NonVegBadge />
                                             <span className="text-xs text-gray-300 mt-1">Non-Veg</span>
-                                        </div>
+                                        </motion.div>
                                         {formData.category && (
-                                            <div className="ml-4 text-sm text-white">
-                                                Selected: {formData.category}
+                                            <div className="ml-2 sm:ml-4 text-sm text-white bg-gray-700 px-2 py-1 rounded">
+                                                {formData.category}
                                             </div>
                                         )}
                                     </div>
                                 </div>
                                 
-                                <div className="flex justify-end gap-3 mt-6">
+                                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-6">
                                     <motion.button
                                         type="button"
                                         onClick={handleCloseModal}
-                                        className="px-4 py-2 bg-gray-700 text-white rounded"
+                                        className="w-full sm:w-auto px-4 py-2 bg-gray-700 text-white rounded text-sm sm:text-base"
                                         whileHover={{ backgroundColor: "#4a4a4a" }}
                                         whileTap={{ scale: 0.95 }}
                                     >
@@ -366,7 +391,7 @@ const ManageItems = () => {
                                     </motion.button>
                                     <motion.button
                                         type="submit"
-                                        className="px-4 py-2 bg-[#2e4a40] text-white rounded"
+                                        className="w-full sm:w-auto px-4 py-2 bg-[#2e4a40] text-white rounded text-sm sm:text-base"
                                         whileHover={{ backgroundColor: "#3a5a50" }}
                                         whileTap={{ scale: 0.95 }}
                                     >
