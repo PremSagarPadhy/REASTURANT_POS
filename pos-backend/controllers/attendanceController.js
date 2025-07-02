@@ -113,6 +113,13 @@ exports.markAttendance = async (req, res) => {
     // Set time to start of day for consistent date comparison
     attendanceDate.setHours(0, 0, 0, 0);
 
+    // Helper function to parse and validate date
+    const parseDate = (dateStr) => {
+      if (!dateStr || dateStr.trim() === '') return null;
+      const parsedDate = new Date(dateStr);
+      return isNaN(parsedDate.getTime()) ? null : parsedDate;
+    };
+
     // Check if attendance already exists for this employee and date
     let attendance = await Attendance.findOne({
       employeeId,
@@ -124,20 +131,26 @@ exports.markAttendance = async (req, res) => {
 
     if (attendance) {
       // Update existing attendance
-      if (checkIn) attendance.checkIn = new Date(checkIn);
-      if (checkOut) attendance.checkOut = new Date(checkOut);
+      const parsedCheckIn = parseDate(checkIn);
+      const parsedCheckOut = parseDate(checkOut);
+      
+      if (parsedCheckIn !== null) attendance.checkIn = parsedCheckIn;
+      if (parsedCheckOut !== null) attendance.checkOut = parsedCheckOut;
       if (status) attendance.status = status;
-      if (notes) attendance.notes = notes;
+      if (notes !== undefined) attendance.notes = notes;
       if (markedBy) attendance.markedBy = markedBy;
       
       await attendance.save();
     } else {
       // Create new attendance record
+      const parsedCheckIn = parseDate(checkIn);
+      const parsedCheckOut = parseDate(checkOut);
+      
       attendance = new Attendance({
         employeeId,
         date: attendanceDate,
-        checkIn: checkIn ? new Date(checkIn) : null,
-        checkOut: checkOut ? new Date(checkOut) : null,
+        checkIn: parsedCheckIn,
+        checkOut: parsedCheckOut,
         status: status || 'present',
         notes: notes || '',
         markedBy: markedBy || 'system'
@@ -167,6 +180,21 @@ exports.updateAttendance = async (req, res) => {
     const updateData = { ...req.body };
 
     console.log('Updating attendance:', id, updateData);
+
+    // Helper function to parse and validate date
+    const parseDate = (dateStr) => {
+      if (!dateStr || dateStr.trim() === '') return null;
+      const parsedDate = new Date(dateStr);
+      return isNaN(parsedDate.getTime()) ? null : parsedDate;
+    };
+
+    // Process checkIn and checkOut dates if they exist
+    if (updateData.checkIn !== undefined) {
+      updateData.checkIn = parseDate(updateData.checkIn);
+    }
+    if (updateData.checkOut !== undefined) {
+      updateData.checkOut = parseDate(updateData.checkOut);
+    }
 
     const attendance = await Attendance.findByIdAndUpdate(
       id, 

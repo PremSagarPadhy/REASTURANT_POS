@@ -159,7 +159,23 @@ const EmployeeAttendance = () => {
 
   const submitMarkAttendance = (e) => {
     e.preventDefault();
-    markMutation.mutate(markFormData);
+    
+    // Prepare the data with proper date formatting
+    const submissionData = {
+      ...markFormData,
+      checkIn: markFormData.checkIn ? 
+        new Date(`${markFormData.date}T${markFormData.checkIn}`).toISOString() : 
+        null,
+      checkOut: markFormData.checkOut ? 
+        new Date(`${markFormData.date}T${markFormData.checkOut}`).toISOString() : 
+        null
+    };
+    
+    // Remove null values to avoid sending them
+    if (!submissionData.checkIn) delete submissionData.checkIn;
+    if (!submissionData.checkOut) delete submissionData.checkOut;
+    
+    markMutation.mutate(submissionData);
   };
 
   const submitUpdateAttendance = (e) => {
