@@ -31,6 +31,7 @@ const EmployeeWorking = () => {
   const [assignmentType, setAssignmentType] = useState(""); // 'waiter' or 'cook'
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [modalSearchTerm, setModalSearchTerm] = useState("");
 
   // Fetch working orders
   const { data: workingOrdersData, isLoading: ordersLoading } = useQuery({
@@ -42,6 +43,8 @@ const EmployeeWorking = () => {
     refetchInterval: 10000, // Refresh every 10 seconds
     onSuccess: (data) => {
       console.log('Working orders data received:', data);
+      console.log('All orders:', data?.data?.all);
+      console.log('Orders count:', data?.data?.all?.length);
     },
     onError: (error) => {
       console.log('Working orders data error:', error);
@@ -110,9 +113,9 @@ const EmployeeWorking = () => {
       const empPosition = emp.position?.toLowerCase() || '';
       const searchPosition = position.toLowerCase();
       const matchesPosition = empPosition.includes(searchPosition);
-      const matchesSearch = emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) || true;
+      const matchesSearch = !searchTerm || emp.name?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      console.log(`Employee ${emp.name} - Position: ${empPosition}, Matches ${searchPosition}: ${matchesPosition}`);
+      console.log(`Employee ${emp.name} - Position: ${empPosition}, Matches ${searchPosition}: ${matchesPosition}, Matches search: ${matchesSearch}`);
       
       return matchesPosition && matchesSearch;
     }) || [];
@@ -124,9 +127,22 @@ const EmployeeWorking = () => {
   const waiters = getFilteredEmployees("waiter");
   const cooks = getFilteredEmployees("cook");
 
+  // Filter employees for modal with separate search
+  const getModalFilteredEmployees = (position) => {
+    return employeesData?.filter(emp => {
+      const empPosition = emp.position?.toLowerCase() || '';
+      const searchPosition = position.toLowerCase();
+      const matchesPosition = empPosition.includes(searchPosition);
+      const matchesSearch = !modalSearchTerm || emp.name?.toLowerCase().includes(modalSearchTerm.toLowerCase());
+      
+      return matchesPosition && matchesSearch;
+    }) || [];
+  };
+
   const handleAssignEmployee = (order, type) => {
     setSelectedOrder(order);
     setAssignmentType(type);
+    setModalSearchTerm(""); // Reset modal search when opening
     setShowAssignModal(true);
   };
 
@@ -144,12 +160,18 @@ const EmployeeWorking = () => {
     }
   };
 
+  // Check if any assignment is in progress
+  const isAssigning = assignWaiterMutation.isPending || assignCookMutation.isPending;
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return 'bg-yellow-900/30 text-yellow-400';
       case 'preparing': return 'bg-blue-900/30 text-blue-400';
       case 'ready': return 'bg-green-900/30 text-green-400';
       case 'served': return 'bg-gray-900/30 text-gray-400';
+      case 'In Progress': return 'bg-yellow-900/30 text-yellow-400';
+      case 'Ready': return 'bg-green-900/30 text-green-400';
+      case 'Completed': return 'bg-blue-900/30 text-blue-400';
       default: return 'bg-gray-900/30 text-gray-400';
     }
   };
@@ -223,9 +245,11 @@ const EmployeeWorking = () => {
                   className="w-full bg-[#333] border border-[#4a4a4a] rounded-md px-3 py-2 text-[#f5f5f5]"
                 >
                   <option value="all">All Status</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Ready">Ready</option>
+                  <option value="Completed">Completed</option>
                   <option value="pending">Pending</option>
                   <option value="preparing">Preparing</option>
-                  <option value="ready">Ready</option>
                   <option value="served">Served</option>
                 </select>
               </div>
@@ -252,6 +276,18 @@ const EmployeeWorking = () => {
                 />
               </div>
             </div>
+            
+            {/* Debugging Info */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-4 p-3 bg-[#1f1f1f] rounded-md">
+                <p className="text-xs text-[#ababab]">
+                  Debug: Loading: {ordersLoading ? 'Yes' : 'No'} | 
+                  Orders: {workingOrdersData?.data?.all?.length || 0} | 
+                  Status Filter: {statusFilter} | 
+                  Employee Filter: {employeeTypeFilter}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -483,16 +519,19 @@ const EmployeeWorking = () => {
           {/* Unassigned Orders Tab */}
           {activeTab === "unassigned" && (
             <div className="space-y-6">
-              {/* Unassigned to Waiters */}
+              {/* All Orders Section with Assignment Status */}
               <div className="bg-[#262626] rounded-lg overflow-hidden">
                 <div className="p-4 border-b border-[#333]">
                   <h3 className="text-[#f5f5f5] text-lg font-semibold flex items-center gap-2">
-                    <FaConciergeBell className="text-blue-400" />
-                    Orders Without Waiters
+                    <MdPendingActions className="text-yellow-400" />
+                    All Orders - Assignment Status
                   </h3>
+                  <p className="text-[#ababab] text-sm mt-1">
+                    View and assign waiters/cooks to orders based on status
+                  </p>
                 </div>
                 
-                {workingOrdersData?.data?.grouped?.unassigned?.waiter?.length > 0 ? (
+                {workingOrdersData?.data?.all && workingOrdersData.data.all.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-[#2f2f2f]">
@@ -502,11 +541,25 @@ const EmployeeWorking = () => {
                           <th className="px-4 py-3 text-left text-[#f5f5f5]">Table</th>
                           <th className="px-4 py-3 text-left text-[#f5f5f5]">Status</th>
                           <th className="px-4 py-3 text-left text-[#f5f5f5]">Time</th>
-                          <th className="px-4 py-3 text-left text-[#f5f5f5]">Action</th>
+                          <th className="px-4 py-3 text-left text-[#f5f5f5]">Assigned Waiter</th>
+                          <th className="px-4 py-3 text-left text-[#f5f5f5]">Assigned Cook</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {workingOrdersData.data.grouped.unassigned.waiter.map((order) => (
+                        {workingOrdersData.data.all
+                          .filter(order => {
+                            // Apply search filter
+                            if (searchTerm) {
+                              const searchLower = searchTerm.toLowerCase();
+                              return (
+                                order.customerDetails.name.toLowerCase().includes(searchLower) ||
+                                order._id.slice(-6).toLowerCase().includes(searchLower) ||
+                                (order.table && order.table.tableNumber.toString().includes(searchLower))
+                              );
+                            }
+                            return true;
+                          })
+                          .map((order) => (
                           <tr key={order._id} className="border-b border-[#333] hover:bg-[#333]">
                             <td className="px-4 py-3 text-[#f5f5f5] font-mono">
                               #{order._id.slice(-6)}
@@ -526,85 +579,163 @@ const EmployeeWorking = () => {
                               {formatTime(order.createdAt)}
                             </td>
                             <td className="px-4 py-3">
-                              <button
-                                onClick={() => handleAssignEmployee(order, "waiter")}
-                                className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                              >
-                                Assign Waiter
-                              </button>
+                              {order.assignedWaiter ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-blue-400">{order.assignedWaiter.name}</span>
+                                  <button
+                                    onClick={() => handleAssignEmployee(order, "waiter")}
+                                    className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                                    title="Reassign Waiter"
+                                  >
+                                    Change
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => handleAssignEmployee(order, "waiter")}
+                                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                                >
+                                  Assign Waiter
+                                </button>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {order.assignedCook ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-orange-400">{order.assignedCook.name}</span>
+                                  <button
+                                    onClick={() => handleAssignEmployee(order, "cook")}
+                                    className="px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700"
+                                    title="Reassign Cook"
+                                  >
+                                    Change
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => handleAssignEmployee(order, "cook")}
+                                  className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700"
+                                >
+                                  Assign Cook
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                ) : ordersLoading ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-[#ababab]">Loading orders...</p>
+                  </div>
                 ) : (
                   <div className="p-8 text-center text-[#ababab]">
-                    All orders have waiters assigned
+                    <MdPendingActions className="text-4xl mx-auto mb-4" />
+                    <p>No active orders found</p>
+                    <p className="text-sm mt-2">
+                      Orders with status: In Progress, Ready, Completed, Pending, Preparing, or Served will appear here
+                    </p>
                   </div>
                 )}
               </div>
 
-              {/* Unassigned to Cooks */}
-              <div className="bg-[#262626] rounded-lg overflow-hidden">
-                <div className="p-4 border-b border-[#333]">
-                  <h3 className="text-[#f5f5f5] text-lg font-semibold flex items-center gap-2">
-                    <FaUtensils className="text-orange-400" />
-                    Orders Without Cooks
-                  </h3>
+              {/* Summary Cards for Unassigned Orders */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Unassigned to Waiters Summary */}
+                <div className="bg-[#262626] rounded-lg overflow-hidden">
+                  <div className="p-4 border-b border-[#333] flex justify-between items-center">
+                    <div>
+                      <h3 className="text-[#f5f5f5] text-lg font-semibold flex items-center gap-2">
+                        <FaConciergeBell className="text-blue-400" />
+                        Orders Without Waiters
+                      </h3>
+                      <p className="text-[#ababab] text-sm">
+                        {workingOrdersData?.data?.grouped?.unassigned?.waiter?.length || 0} orders pending waiter assignment
+                      </p>
+                    </div>
+                    <span className="px-3 py-1 bg-blue-900/30 text-blue-400 rounded-full text-sm">
+                      {workingOrdersData?.data?.grouped?.unassigned?.waiter?.length || 0}
+                    </span>
+                  </div>
+                  
+                  {workingOrdersData?.data?.grouped?.unassigned?.waiter?.length > 0 ? (
+                    <div className="p-4 space-y-2 max-h-64 overflow-y-auto">
+                      {workingOrdersData.data.grouped.unassigned.waiter.slice(0, 5).map((order) => (
+                        <div key={order._id} className="flex justify-between items-center p-2 bg-[#1f1f1f] rounded-md">
+                          <div>
+                            <p className="text-[#f5f5f5] font-medium">#{order._id.slice(-6)}</p>
+                            <p className="text-[#ababab] text-sm">{order.customerDetails.name}</p>
+                          </div>
+                          <button
+                            onClick={() => handleAssignEmployee(order, "waiter")}
+                            className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                          >
+                            Assign
+                          </button>
+                        </div>
+                      ))}
+                      {workingOrdersData.data.grouped.unassigned.waiter.length > 5 && (
+                        <p className="text-[#ababab] text-center text-sm">
+                          +{workingOrdersData.data.grouped.unassigned.waiter.length - 5} more orders...
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-[#ababab]">
+                      <FaConciergeBell className="text-2xl mx-auto mb-2" />
+                      <p className="text-sm">All orders have waiters assigned</p>
+                    </div>
+                  )}
                 </div>
-                
-                {workingOrdersData?.data?.grouped?.unassigned?.cook?.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-[#2f2f2f]">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-[#f5f5f5]">Order ID</th>
-                          <th className="px-4 py-3 text-left text-[#f5f5f5]">Customer</th>
-                          <th className="px-4 py-3 text-left text-[#f5f5f5]">Table</th>
-                          <th className="px-4 py-3 text-left text-[#f5f5f5]">Status</th>
-                          <th className="px-4 py-3 text-left text-[#f5f5f5]">Time</th>
-                          <th className="px-4 py-3 text-left text-[#f5f5f5]">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {workingOrdersData.data.grouped.unassigned.cook.map((order) => (
-                          <tr key={order._id} className="border-b border-[#333] hover:bg-[#333]">
-                            <td className="px-4 py-3 text-[#f5f5f5] font-mono">
-                              #{order._id.slice(-6)}
-                            </td>
-                            <td className="px-4 py-3 text-[#f5f5f5]">
-                              {order.customerDetails.name}
-                            </td>
-                            <td className="px-4 py-3 text-[#f5f5f5]">
-                              {order.table ? `Table ${order.table.tableNumber}` : 'Takeaway'}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(order.orderStatus)}`}>
-                                {order.orderStatus}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-[#ababab]">
-                              {formatTime(order.createdAt)}
-                            </td>
-                            <td className="px-4 py-3">
-                              <button
-                                onClick={() => handleAssignEmployee(order, "cook")}
-                                className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700"
-                              >
-                                Assign Cook
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+
+                {/* Unassigned to Cooks Summary */}
+                <div className="bg-[#262626] rounded-lg overflow-hidden">
+                  <div className="p-4 border-b border-[#333] flex justify-between items-center">
+                    <div>
+                      <h3 className="text-[#f5f5f5] text-lg font-semibold flex items-center gap-2">
+                        <FaUtensils className="text-orange-400" />
+                        Orders Without Cooks
+                      </h3>
+                      <p className="text-[#ababab] text-sm">
+                        {workingOrdersData?.data?.grouped?.unassigned?.cook?.length || 0} orders pending cook assignment
+                      </p>
+                    </div>
+                    <span className="px-3 py-1 bg-orange-900/30 text-orange-400 rounded-full text-sm">
+                      {workingOrdersData?.data?.grouped?.unassigned?.cook?.length || 0}
+                    </span>
                   </div>
-                ) : (
-                  <div className="p-8 text-center text-[#ababab]">
-                    All orders have cooks assigned
-                  </div>
-                )}
+                  
+                  {workingOrdersData?.data?.grouped?.unassigned?.cook?.length > 0 ? (
+                    <div className="p-4 space-y-2 max-h-64 overflow-y-auto">
+                      {workingOrdersData.data.grouped.unassigned.cook.slice(0, 5).map((order) => (
+                        <div key={order._id} className="flex justify-between items-center p-2 bg-[#1f1f1f] rounded-md">
+                          <div>
+                            <p className="text-[#f5f5f5] font-medium">#{order._id.slice(-6)}</p>
+                            <p className="text-[#ababab] text-sm">{order.customerDetails.name}</p>
+                          </div>
+                          <button
+                            onClick={() => handleAssignEmployee(order, "cook")}
+                            className="px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700"
+                          >
+                            Assign
+                          </button>
+                        </div>
+                      ))}
+                      {workingOrdersData.data.grouped.unassigned.cook.length > 5 && (
+                        <p className="text-[#ababab] text-center text-sm">
+                          +{workingOrdersData.data.grouped.unassigned.cook.length - 5} more orders...
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-[#ababab]">
+                      <FaUtensils className="text-2xl mx-auto mb-2" />
+                      <p className="text-sm">All orders have cooks assigned</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -645,27 +776,37 @@ const EmployeeWorking = () => {
                 <input
                   type="text"
                   placeholder="Search employees..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={modalSearchTerm}
+                  onChange={(e) => setModalSearchTerm(e.target.value)}
                   className="w-full bg-[#333] border border-[#4a4a4a] rounded-md px-3 py-2 text-[#f5f5f5] mb-3"
                 />
               </div>
 
               <div className="max-h-64 overflow-y-auto space-y-2">
-                {(assignmentType === "waiter" ? waiters : cooks).map((employee) => (
+                {getModalFilteredEmployees(assignmentType).map((employee) => (
                   <motion.button
                     key={employee._id}
                     onClick={() => submitAssignment(employee._id)}
-                    className="w-full text-left p-3 bg-[#333] hover:bg-[#3d3d3d] rounded-md transition-colors"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    disabled={isAssigning}
+                    className={`w-full text-left p-3 rounded-md transition-colors ${
+                      isAssigning 
+                        ? 'bg-[#2a2a2a] cursor-not-allowed opacity-50' 
+                        : 'bg-[#333] hover:bg-[#3d3d3d]'
+                    }`}
+                    whileHover={!isAssigning ? { scale: 1.02 } : {}}
+                    whileTap={!isAssigning ? { scale: 0.98 } : {}}
                   >
-                    <p className="text-[#f5f5f5] font-medium">{employee.name}</p>
+                    <p className="text-[#f5f5f5] font-medium">
+                      {employee.name}
+                      {isAssigning && (
+                        <span className="ml-2 text-xs text-[#ababab]">Assigning...</span>
+                      )}
+                    </p>
                     <p className="text-[#ababab] text-sm">ID: {employee.empid} • {employee.position}</p>
                   </motion.button>
                 ))}
                 
-                {(assignmentType === "waiter" ? waiters : cooks).length === 0 && (
+                {getModalFilteredEmployees(assignmentType).length === 0 && (
                   <p className="text-[#ababab] text-center py-4">
                     No {assignmentType}s found
                   </p>

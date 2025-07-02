@@ -415,7 +415,7 @@ const getWorkingOrders = async (req, res, next) => {
     const { status, employeeType } = req.query;
     
     let filter = {
-      orderStatus: { $in: ['pending', 'preparing', 'ready', 'served'] }
+      orderStatus: { $in: ['pending', 'preparing', 'ready', 'served', 'In Progress', 'Ready', 'Completed'] }
     };
 
     if (status && status !== 'all') {
