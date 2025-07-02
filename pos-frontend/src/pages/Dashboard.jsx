@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {Analytics, RecentOrders, Payments, OrderList, ViewTable, AddCategory, Inventory, ManageItems, Invoices, AdminSupport, EmployeeDetails, EmployeeEdit, EmployeeAttendance
+import {Analytics, RecentOrders, Payments, OrderList, ViewTable, AddCategory, Inventory, ManageItems, Invoices, AdminSupport, EmployeeDetails, EmployeeEdit, EmployeeAttendance, EmployeeWorking
 } from "../components/dashboard";
 
 import { useSidebar } from "../context/SidebarContext";
@@ -50,6 +50,8 @@ const Dashboard = () => {
         return <EmployeeEdit />;
       case "Employee Attendance":
         return <EmployeeAttendance />;
+      case "Employee Working":
+        return <EmployeeWorking />;
       default:
         return <Analytics />;
     }

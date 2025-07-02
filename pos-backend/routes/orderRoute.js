@@ -6,7 +6,11 @@ const {
   updateOrder,
   deleteOrder,
   getOrderComparison,
-  getPopularDishes
+  getPopularDishes,
+  assignWaiterToOrder,
+  assignCookToOrder,
+  getWorkingOrders,
+  getEmployeeWorkload
 } = require("../controllers/orderController");
 
 const { isVerifiedUser } = require("../middlewares/tokenVerification");
@@ -21,6 +25,10 @@ const router = express.Router();
 
 router.get("/popular-dishes", isVerifiedUser, getPopularDishes);
 router.get("/comparison", isVerifiedUser, getOrderComparison);
+router.get("/working", isVerifiedUser, getWorkingOrders);
+router.get("/workload", isVerifiedUser, getEmployeeWorkload);
+router.post("/assign-waiter", isVerifiedUser, assignWaiterToOrder);
+router.post("/assign-cook", isVerifiedUser, assignCookToOrder);
 router.post("/", isVerifiedUser, socketMiddleware, addOrder);
 router.get("/", isVerifiedUser, getOrders);
 router.get("/:id", isVerifiedUser, getOrderById);

@@ -355,6 +355,196 @@ const getPopularDishes = async (req, res, next) => {
   }
 };
 
+// Assign waiter to order
+const assignWaiterToOrder = async (req, res, next) => {
+  try {
+    const { orderId, waiterId } = req.body;
+    
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { 
+        assignedWaiter: waiterId,
+        'assignedAt.waiter': new Date()
+      },
+      { new: true }
+    ).populate('assignedWaiter', 'empid name position')
+     .populate('assignedCook', 'empid name position')
+     .populate('table');
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    res.json({ success: true, data: order });
+  } catch (error) {
+    console.error('Error assigning waiter:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Assign cook to order
+const assignCookToOrder = async (req, res, next) => {
+  try {
+    const { orderId, cookId } = req.body;
+    
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { 
+        assignedCook: cookId,
+        'assignedAt.cook': new Date()
+      },
+      { new: true }
+    ).populate('assignedWaiter', 'empid name position')
+     .populate('assignedCook', 'empid name position')
+     .populate('table');
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    res.json({ success: true, data: order });
+  } catch (error) {
+    console.error('Error assigning cook:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get working orders with employee assignments
+const getWorkingOrders = async (req, res, next) => {
+  try {
+    const { status, employeeType } = req.query;
+    
+    let filter = {
+      orderStatus: { $in: ['pending', 'preparing', 'ready', 'served'] }
+    };
+
+    if (status && status !== 'all') {
+      filter.orderStatus = status;
+    }
+
+    let orders = await Order.find(filter)
+      .populate('assignedWaiter', 'empid name position')
+      .populate('assignedCook', 'empid name position')
+      .populate('table')
+      .sort({ createdAt: -1 });
+
+    // Filter by employee type if specified
+    if (employeeType === 'waiter') {
+      orders = orders.filter(order => order.assignedWaiter);
+    } else if (employeeType === 'cook') {
+      orders = orders.filter(order => order.assignedCook);
+    }
+
+    // Group orders by employee
+    const groupedData = {
+      waiters: {},
+      cooks: {},
+      unassigned: {
+        waiter: [],
+        cook: []
+      }
+    };
+
+    orders.forEach(order => {
+      // Group by waiter
+      if (order.assignedWaiter) {
+        const waiterId = order.assignedWaiter._id.toString();
+        if (!groupedData.waiters[waiterId]) {
+          groupedData.waiters[waiterId] = {
+            employee: order.assignedWaiter,
+            orders: []
+          };
+        }
+        groupedData.waiters[waiterId].orders.push(order);
+      } else {
+        groupedData.unassigned.waiter.push(order);
+      }
+
+      // Group by cook
+      if (order.assignedCook) {
+        const cookId = order.assignedCook._id.toString();
+        if (!groupedData.cooks[cookId]) {
+          groupedData.cooks[cookId] = {
+            employee: order.assignedCook,
+            orders: []
+          };
+        }
+        groupedData.cooks[cookId].orders.push(order);
+      } else {
+        groupedData.unassigned.cook.push(order);
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      data: {
+        all: orders,
+        grouped: groupedData
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching working orders:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get employee workload summary
+const getEmployeeWorkload = async (req, res, next) => {
+  try {
+    const activeOrders = await Order.find({
+      orderStatus: { $in: ['pending', 'preparing', 'ready'] }
+    }).populate('assignedWaiter assignedCook', 'empid name position');
+
+    const workloadSummary = {
+      waiters: {},
+      cooks: {}
+    };
+
+    activeOrders.forEach(order => {
+      if (order.assignedWaiter) {
+        const waiterId = order.assignedWaiter._id.toString();
+        if (!workloadSummary.waiters[waiterId]) {
+          workloadSummary.waiters[waiterId] = {
+            employee: order.assignedWaiter,
+            activeOrders: 0,
+            orders: []
+          };
+        }
+        workloadSummary.waiters[waiterId].activeOrders++;
+        workloadSummary.waiters[waiterId].orders.push({
+          orderId: order._id,
+          status: order.orderStatus,
+          table: order.table,
+          customerName: order.customerDetails.name
+        });
+      }
+
+      if (order.assignedCook) {
+        const cookId = order.assignedCook._id.toString();
+        if (!workloadSummary.cooks[cookId]) {
+          workloadSummary.cooks[cookId] = {
+            employee: order.assignedCook,
+            activeOrders: 0,
+            orders: []
+          };
+        }
+        workloadSummary.cooks[cookId].activeOrders++;
+        workloadSummary.cooks[cookId].orders.push({
+          orderId: order._id,
+          status: order.orderStatus,
+          table: order.table,
+          customerName: order.customerDetails.name
+        });
+      }
+    });
+
+    res.json({ success: true, data: workloadSummary });
+  } catch (error) {
+    console.error('Error fetching employee workload:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Export all
 module.exports = {
   addOrder,
@@ -363,5 +553,9 @@ module.exports = {
   updateOrder,
   deleteOrder,
   getOrderComparison,
-  getPopularDishes
+  getPopularDishes,
+  assignWaiterToOrder,
+  assignCookToOrder,
+  getWorkingOrders,
+  getEmployeeWorkload
 };

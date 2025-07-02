@@ -25,6 +25,19 @@ const orderSchema = new mongoose.Schema({
     paymentData: {
         razorpay_order_id: String,
         razorpay_payment_id: String
+    },
+    // Employee assignments
+    assignedWaiter: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "Employee" 
+    },
+    assignedCook: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "Employee" 
+    },
+    assignedAt: {
+        waiter: { type: Date },
+        cook: { type: Date }
     }
 }, { timestamps : true } );
 

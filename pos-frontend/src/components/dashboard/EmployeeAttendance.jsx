@@ -41,6 +41,7 @@ const EmployeeAttendance = () => {
   // Mark attendance form data
   const [markFormData, setMarkFormData] = useState({
     employeeId: "",
+    empid: "",
     date: new Date().toISOString().split('T')[0],
     checkIn: "",
     checkOut: "",
@@ -48,6 +49,10 @@ const EmployeeAttendance = () => {
     notes: "",
     markedBy: "admin"
   });
+
+  // State for employee lookup
+  const [employeeLookup, setEmployeeLookup] = useState(null);
+  const [employeeNotFound, setEmployeeNotFound] = useState(false);
 
   // Fetch today's attendance
   const { data: todayData, isLoading: todayLoading } = useQuery({
@@ -126,6 +131,7 @@ const EmployeeAttendance = () => {
   const resetMarkForm = () => {
     setMarkFormData({
       employeeId: "",
+      empid: "",
       date: new Date().toISOString().split('T')[0],
       checkIn: "",
       checkOut: "",
@@ -133,17 +139,46 @@ const EmployeeAttendance = () => {
       notes: "",
       markedBy: "admin"
     });
+    setEmployeeLookup(null);
+    setEmployeeNotFound(false);
   };
 
   const handleMarkAttendance = (employee = null) => {
     if (employee) {
       setMarkFormData(prev => ({
         ...prev,
-        employeeId: employee._id
+        employeeId: employee._id,
+        empid: employee.empid
       }));
       setSelectedEmployee(employee);
+      setEmployeeLookup(employee);
+      setEmployeeNotFound(false);
     }
     setShowMarkModal(true);
+  };
+
+  // Function to lookup employee by empid
+  const lookupEmployee = (empid) => {
+    if (!empid.trim()) {
+      setEmployeeLookup(null);
+      setEmployeeNotFound(false);
+      setMarkFormData(prev => ({ ...prev, employeeId: "" }));
+      return;
+    }
+
+    const employee = employees?.find(emp => 
+      emp.empid.toLowerCase() === empid.toLowerCase()
+    );
+
+    if (employee) {
+      setEmployeeLookup(employee);
+      setEmployeeNotFound(false);
+      setMarkFormData(prev => ({ ...prev, employeeId: employee._id }));
+    } else {
+      setEmployeeLookup(null);
+      setEmployeeNotFound(true);
+      setMarkFormData(prev => ({ ...prev, employeeId: "" }));
+    }
   };
 
   const handleEditAttendance = (attendance) => {
@@ -159,6 +194,12 @@ const EmployeeAttendance = () => {
 
   const submitMarkAttendance = (e) => {
     e.preventDefault();
+    
+    // Validate employee is found
+    if (!employeeLookup) {
+      enqueueSnackbar("Please enter a valid employee ID", { variant: "error" });
+      return;
+    }
     
     // Prepare the data with proper date formatting
     const submissionData = {
@@ -751,20 +792,42 @@ const EmployeeAttendance = () => {
               
               <form onSubmit={submitMarkAttendance} className="space-y-4">
                 <div>
-                  <label className="block text-sm text-[#ababab] mb-2">Employee</label>
-                  <select
-                    value={markFormData.employeeId}
-                    onChange={(e) => setMarkFormData(prev => ({ ...prev, employeeId: e.target.value }))}
+                  <label className="block text-sm text-[#ababab] mb-2">Employee ID</label>
+                  <input
+                    type="text"
+                    value={markFormData.empid}
+                    onChange={(e) => {
+                      const empid = e.target.value;
+                      setMarkFormData(prev => ({ ...prev, empid }));
+                      lookupEmployee(empid);
+                    }}
+                    placeholder="Enter employee ID"
                     required
-                    className="w-full bg-[#333] border border-[#4a4a4a] rounded-md px-3 py-2 text-[#f5f5f5]"
-                  >
-                    <option value="">Select Employee</option>
-                    {employees?.map((emp) => (
-                      <option key={emp._id} value={emp._id}>
-                        {emp.name} ({emp.empid})
-                      </option>
-                    ))}
-                  </select>
+                    className={`w-full border rounded-md px-3 py-2 text-[#f5f5f5] ${
+                      employeeNotFound 
+                        ? 'bg-red-900/20 border-red-500' 
+                        : employeeLookup 
+                          ? 'bg-green-900/20 border-green-500' 
+                          : 'bg-[#333] border-[#4a4a4a]'
+                    }`}
+                  />
+                  {employeeLookup && (
+                    <div className="mt-2 p-2 bg-green-900/20 border border-green-500 rounded-md">
+                      <p className="text-green-400 text-sm font-medium">
+                        ✓ {employeeLookup.name}
+                      </p>
+                      <p className="text-green-300 text-xs">
+                        Position: {employeeLookup.position}
+                      </p>
+                    </div>
+                  )}
+                  {employeeNotFound && (
+                    <div className="mt-2 p-2 bg-red-900/20 border border-red-500 rounded-md">
+                      <p className="text-red-400 text-sm">
+                        ✗ Employee not found
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>

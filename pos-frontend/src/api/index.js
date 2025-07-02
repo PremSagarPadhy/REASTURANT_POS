@@ -47,6 +47,15 @@ export const deleteOrder = (id) => api.delete(`/order/${id}`);
 export const getPopularDishes = () => api.get('/order/popular-dishes');
 export const getOrderComparison = () => api.get('/order/comparison');
 
+// Employee working order endpoints
+export const getWorkingOrders = (params = {}) => {
+  const queryString = new URLSearchParams(params).toString();
+  return api.get(`/order/working${queryString ? '?' + queryString : ''}`);
+};
+export const getEmployeeWorkload = () => api.get('/order/workload');
+export const assignWaiterToOrder = (data) => api.post('/order/assign-waiter', data);
+export const assignCookToOrder = (data) => api.post('/order/assign-cook', data);
+
 // Payment/Earnings endpoints
 export const getDailyEarnings = (date) => api.get(`/payment/daily-earnings?date=${date}`);
 export const createOrderRazorpay = (data) => api.post("/payment/create-order", data);

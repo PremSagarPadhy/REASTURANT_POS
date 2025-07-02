@@ -6,6 +6,7 @@ export { default as EmployeeAdd } from './EmployeeAdd';
 export { default as EmployeeDetails } from './EmployeeDetails';
 export { default as EmployeeEdit } from './EmployeeEdit';
 export { default as EmployeeAttendance } from './EmployeeAttendance';
+export { default as EmployeeWorking } from './EmployeeWorking';
 export { default as Invoices } from './Invoices';
 export { default as Modal } from './Modal';
 export { default as AddCategory } from './AddCategory';
