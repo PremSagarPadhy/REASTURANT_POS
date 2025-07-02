@@ -32,7 +32,7 @@ const Sidebar = () => {
   const handleMenuItemClick = (item) => {
     if (item.label === "Analytics" || item.label === "Edit Orders" || item.label === "View Orders"|| item.label === "Create Orders" || item.label === "Payments" 
       || item.label === "View Table" || item.label === "Create Table" || item.label === "Add Category" || item.label === "Edit Category" || item.label === "Manage Items" 
-      || item.label === "Invoices" || item.label === "Inventory" || item.label === "Customer" || item.label === "Employee Details" ||item.label==="Employee Edit"|| item.label === "Feedback" 
+      || item.label === "Invoices" || item.label === "Inventory" || item.label === "Customer" || item.label === "Employee Details" ||item.label==="Employee Edit"|| item.label === "Employee Attendance" || item.label === "Feedback" 
       || item.label === "AdminSupport" || item.label === "Notification") {
       // If the item is a dashboard item, set the current view
       // If on dashboard page, just update the view
@@ -112,7 +112,8 @@ const Sidebar = () => {
         label: "Employee",
         submenu: [
         { label: "Employee Details", action: () => handleMenuItemClick({ label: "Employee Details" }) },
-        { label: "Employee Edit", action: () => handleMenuItemClick({ label: "Employee Edit" }) }
+        { label: "Employee Edit", action: () => handleMenuItemClick({ label: "Employee Edit" }) },
+        { label: "Employee Attendance", action: () => handleMenuItemClick({ label: "Employee Attendance" }) }
       ], 
     },
     { icon: <MdOutlineFeedback size={20} />, label: "Feedback", action: () => handleMenuItemClick({ label: "Feedback" }) },

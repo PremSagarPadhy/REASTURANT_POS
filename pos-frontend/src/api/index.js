@@ -93,6 +93,24 @@ export const addEmployee = (employeeData) => api.post('/employees', employeeData
 export const updateEmployee = ({ id, data }) => api.put(`/employees/${id}`, data).then(res => res.data.data);
 export const deleteEmployee = (id) => api.delete(`/employees/${id}`).then(res => res.data);
 
+// Attendance endpoints
+export const getAllAttendance = (params = {}) => {
+  const queryString = new URLSearchParams(params).toString();
+  return api.get(`/attendance?${queryString}`).then(res => res.data);
+};
+export const getTodayAttendance = () => api.get('/attendance/today').then(res => res.data);
+export const getAttendanceSummary = (params = {}) => {
+  const queryString = new URLSearchParams(params).toString();
+  return api.get(`/attendance/summary?${queryString}`).then(res => res.data);
+};
+export const getAttendanceByEmployee = (employeeId, params = {}) => {
+  const queryString = new URLSearchParams(params).toString();
+  return api.get(`/attendance/employee/${employeeId}?${queryString}`).then(res => res.data);
+};
+export const markAttendance = (attendanceData) => api.post('/attendance', attendanceData).then(res => res.data);
+export const updateAttendance = ({ id, data }) => api.put(`/attendance/${id}`, data).then(res => res.data);
+export const deleteAttendance = (id) => api.delete(`/attendance/${id}`).then(res => res.data);
+
 // Support endpoints
 export const registerSupportCustomer = (customerData) => api.post('/support/register', customerData);
 export const sendSupportMessage = (messageData) => api.post('/support/customer-message', messageData);

@@ -1,0 +1,17 @@
+export { default as Payments } from './Payments';
+export { default as Inventory } from './Inventory';
+export { default as Analytics } from './Analytics';
+export { default as AdminSupport } from './AdminSupport';
+export { default as EmployeeAdd } from './EmployeeAdd';
+export { default as EmployeeDetails } from './EmployeeDetails';
+export { default as EmployeeEdit } from './EmployeeEdit';
+export { default as EmployeeAttendance } from './EmployeeAttendance';
+export { default as Invoices } from './Invoices';
+export { default as Modal } from './Modal';
+export { default as AddCategory } from './AddCategory';
+export { default as ManageItems } from './ManageItems';
+export { default as ViewTable } from './ViewTable';
+export { default as OrderList } from './OrderList';
+export { default as Metrics } from './Metrics';
+export { default as RecentOrders } from './RecentOrders';
+export { default as RadialChart } from './RadialChart';

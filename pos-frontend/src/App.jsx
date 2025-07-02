@@ -6,21 +6,13 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { Home, Auth, Orders, Tables, Menu, Dashboard, Analytics } from "./pages";
-import Payments from "./components/dashboard/Payments";
-import Inventory from "./components/dashboard/Inventory"; 
-import Header from "./components/shared/Header";
-import Sidebar from "./components/shared/Sidebar";
-import Notification from "./components/shared/Notification"; 
+import { Home, Auth, Orders, Tables, Menu, Dashboard, Support} from "./pages";
+import {Payments, Inventory, EmployeeAttendance, AdminSupport, EmployeeAdd, EmployeeDetails, EmployeeEdit, Analytics} from "./components/dashboard";
+import {Sidebar, Header, FullScreenLoader, Notification} from "./components/shared";
 import { useSelector } from "react-redux";
 import useLoadData from "./hooks/useLoadData";
-import FullScreenLoader from "./components/shared/FullScreenLoader";
 import { SidebarProvider } from "./context/SidebarContext";
-import Support from "./pages/Support";
-import AdminSupport from "./components/dashboard/AdminSupport";
-import EmployeeAdd from "./components/dashboard/EmployeeAdd";
-import EmployeeDetails from "./components/dashboard/EmployeeDetails";
-import EmployeeEdit from "./components/dashboard/EmployeeEdit";
+
 
 function Layout() {
   const isLoading = useLoadData();
@@ -30,7 +22,8 @@ function Layout() {
                       location.pathname.includes("/admin-support") ||
                       location.pathname.includes("/employees") ||
                       location.pathname.includes("/employee-add") ||
-                      location.pathname.includes("/employee-edit");
+                      location.pathname.includes("/employee-edit") ||
+                      location.pathname.includes("/attendance")
   const hideHeaderRoutes = ["/auth"];
   const { isAuth } = useSelector((state) => state.user);
 
@@ -66,6 +59,7 @@ function Layout() {
           <Route path="/employees" element={<ProtectedRoutes><EmployeeDetails /></ProtectedRoutes>} />
           <Route path="/employee-add" element={<ProtectedRoutes><EmployeeAdd /></ProtectedRoutes>} />
           <Route path="/employee-edit/:id" element={<ProtectedRoutes><EmployeeEdit /></ProtectedRoutes>} />
+          <Route path="/attendance" element={<ProtectedRoutes><EmployeeAttendance /></ProtectedRoutes>} />
           <Route path="*" element={<div>Not Found</div>} />
         </Routes>
       </div>

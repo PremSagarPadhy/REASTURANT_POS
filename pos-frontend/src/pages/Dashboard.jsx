@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Analytics from "../components/dashboard/Analytics";
-import RecentOrders from "../components/dashboard/RecentOrders";
-import Payments from "../components/dashboard/Payments";
-import OrderList from "../components/dashboard/OrderList";
-import ViewTable from "../components/dashboard/ViewTable";
-import AddCategory from "../components/dashboard/AddCategory";
-import Inventory from "../components/dashboard/Inventory";
-import ManageItems from "../components/dashboard/ManageItems";
-import Invoices from "../components/dashboard/Invoices";
-import AdminSupport from "../components/dashboard/AdminSupport"; 
-import EmployeeDetails from "../components/dashboard/EmployeeDetails";
-import EmployeeEdit from "../components/dashboard/EmployeeEdit";
+import {Analytics, RecentOrders, Payments, OrderList, ViewTable, AddCategory, Inventory, ManageItems, Invoices, AdminSupport, EmployeeDetails, EmployeeEdit, EmployeeAttendance
+} from "../components/dashboard";
 
 import { useSidebar } from "../context/SidebarContext";
 
@@ -58,6 +48,8 @@ const Dashboard = () => {
         return <EmployeeDetails />;
       case "Employee Edit":
         return <EmployeeEdit />;
+      case "Employee Attendance":
+        return <EmployeeAttendance />;
       default:
         return <Analytics />;
     }
@@ -70,12 +62,6 @@ const Dashboard = () => {
           isSidebarOpen ? 'ml-56' : 'ml-16'
         }`}
       >
-        <div className="container overflow-x-auto  flex items-center justify-between py-1 px-6 md:px-4">
-          {/* Current view indicator */}
-          <div className="px-8 py-3 rounded-lg text-[#f5f5f5] font-semibold text-md">
-            {currentView || "Analytics"}
-          </div>
-        </div>
         {/* Page Content */}
         <div className="overflow-y-auto h-[calc(100vh-1rem)] custom-scrollbar-hidden">
           {renderContent()}

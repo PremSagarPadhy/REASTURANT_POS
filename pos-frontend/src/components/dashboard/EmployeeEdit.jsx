@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { enqueueSnackbar } from "notistack";
-import { motion } from "framer-motion";
-import { FaLock, FaSave, FaArrowLeft } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaLock, FaSave, FaArrowLeft, FaSearch, FaTimes } from "react-icons/fa";
 import { MdModeEdit } from "react-icons/md"; // Import pen edit icon
-import { getEmployeeById, updateEmployee } from '../../api/index.js';
+import { getEmployeeById, updateEmployee, getEmployees } from '../../api/index.js';
 
 const EmployeeEdit = () => {
   const { id } = useParams();
@@ -14,6 +14,9 @@ const EmployeeEdit = () => {
   
   // State
   const [formLocked, setFormLocked] = useState(true);
+  const [showSearchModal, setShowSearchModal] = useState(!id); // Show modal if no ID in URL
+  const [searchEmpId, setSearchEmpId] = useState("");
+  const [employeeId, setEmployeeId] = useState(id || "");
   const [formData, setFormData] = useState({
     empid: "",
     name: "",
@@ -22,11 +25,27 @@ const EmployeeEdit = () => {
     position: ""
   });
   
+  // Fetch all employees for search validation
+  const { data: allEmployees } = useQuery({
+    queryKey: ["employees"],
+    queryFn: getEmployees,
+    enabled: showSearchModal,
+  });
+  
   // Fetch employee data
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["employee", id],
-    queryFn: () => getEmployeeById(id),
-    enabled: !!id,
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["employee", employeeId],
+    queryFn: () => {
+      console.log("Fetching employee with ID:", employeeId);
+      return getEmployeeById(employeeId);
+    },
+    enabled: !!employeeId && !showSearchModal,
+    onSuccess: (data) => {
+      console.log("Successfully fetched employee data:", data);
+    },
+    onError: (error) => {
+      console.error("Error fetching employee:", error);
+    }
   });
 
   // Update employee mutation
@@ -34,7 +53,7 @@ const EmployeeEdit = () => {
     mutationFn: updateEmployee,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees"] });
-      queryClient.invalidateQueries({ queryKey: ["employee", id] });
+      queryClient.invalidateQueries({ queryKey: ["employee", employeeId] });
       enqueueSnackbar("Employee updated successfully!", { variant: "success" });
       setFormLocked(true);
     },
@@ -43,15 +62,49 @@ const EmployeeEdit = () => {
     },
   });
 
+  // Handle search for employee
+  const handleSearchEmployee = () => {
+    if (!searchEmpId.trim()) {
+      enqueueSnackbar("Please enter an Employee ID", { variant: "error" });
+      return;
+    }
+
+    // Check if employee exists in the list
+    const foundEmployee = allEmployees?.find(emp => emp.empid === searchEmpId.trim());
+    
+    if (!foundEmployee) {
+      enqueueSnackbar("Employee not found with this ID", { variant: "error" });
+      return;
+    }
+
+    console.log("Found employee:", foundEmployee);
+
+    // Set the employee ID and close modal
+    setEmployeeId(foundEmployee._id);
+    setShowSearchModal(false);
+    
+    // Update URL without navigation
+    window.history.replaceState({}, '', `/employee-edit/${foundEmployee._id}`);
+    
+    enqueueSnackbar(`Loading employee: ${foundEmployee.name}`, { variant: "info" });
+  };
+
+  // Handle modal cancel
+  const handleCancelSearch = () => {
+    setShowSearchModal(false);
+    // Don't navigate, just close the modal
+  };
+
   // Set form data when employee data is loaded
   useEffect(() => {
-    if (data?.data) {
+    console.log("Employee data received:", data);
+    if (data) {
       setFormData({
-        empid: data.data.empid || "",
-        name: data.data.name || "",
-        phone: data.data.phone || "",
-        address: data.data.address || "",
-        position: data.data.position || ""
+        empid: data.empid || "",
+        name: data.name || "",
+        phone: data.phone || "",
+        address: data.address || "",
+        position: data.position || ""
       });
     }
   }, [data]);
@@ -74,7 +127,7 @@ const EmployeeEdit = () => {
     // If form is locked, do nothing (edit button should be used instead)
     if (formLocked) return;
     
-    mutation.mutate({ id, data: formData });
+    mutation.mutate({ id: employeeId, data: formData });
   };
 
   // Handle unlock form
@@ -87,18 +140,126 @@ const EmployeeEdit = () => {
     navigate("/employees");
   };
 
-  if (isError) {
-    enqueueSnackbar("Failed to load employee data!", { variant: "error" });
-  }
+  // Handle error notification
+  useEffect(() => {
+    if (isError) {
+      enqueueSnackbar("Failed to load employee data!", { variant: "error" });
+    }
+  }, [isError]);
 
   return (
     <div className="bg-[#1a1a1a] p-6 min-h-screen">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="container mx-auto py-2 px-6 md:px-4"
-      >
+      {/* Employee ID Search Modal */}
+      <AnimatePresence>
+        {showSearchModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#262626] rounded-lg shadow-xl p-6 w-full max-w-md mx-4"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-[#f5f5f5]">
+                  Find Employee
+                </h2>
+                <button
+                  onClick={handleCancelSearch}
+                  className="text-[#ababab] hover:text-[#f5f5f5] transition-colors"
+                >
+                  <FaTimes size={20} />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#ababab] mb-2">
+                    Enter Employee ID
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchEmpId}
+                      onChange={(e) => setSearchEmpId(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSearchEmployee();
+                        }
+                      }}
+                      className="w-full bg-[#333] border border-[#4a4a4a] rounded-md px-4 py-3 pr-12 text-[#f5f5f5] focus:outline-none focus:ring-2 focus:ring-[#025cca] focus:border-[#025cca]"
+                      placeholder="Type employee ID here..."
+                      autoFocus
+                    />
+                    <FaSearch className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#ababab]" />
+                  </div>
+                  
+                  {/* Show available employee IDs */}
+                  {allEmployees && allEmployees.length > 0 && (
+                    <div className="mt-3 p-3 bg-[#1f1f1f] rounded-md">
+                      <p className="text-xs text-[#ababab] mb-2">Available Employee IDs:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {allEmployees.slice(0, 6).map((emp) => (
+                          <motion.button
+                            key={emp._id}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setSearchEmpId(emp.empid)}
+                            className="px-2 py-1 bg-[#025cca] text-white text-xs rounded hover:bg-[#0273fa] transition-colors"
+                          >
+                            {emp.empid}
+                          </motion.button>
+                        ))}
+                        {allEmployees.length > 6 && (
+                          <span className="text-xs text-[#ababab] self-center">
+                            +{allEmployees.length - 6} more...
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex gap-3 justify-end pt-4">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleCancelSearch}
+                    className="px-4 py-2 bg-[#4a4a4a] text-[#f5f5f5] rounded-md hover:bg-[#5a5a5a] transition-colors"
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleSearchEmployee}
+                    className="px-6 py-2 bg-[#025cca] text-white rounded-md hover:bg-[#0273fa] transition-colors flex items-center gap-2"
+                  >
+                    <FaSearch /> Search
+                  </motion.button>
+                </div>
+                
+                <div className="text-center text-[#ababab] text-sm pt-2">
+                  Enter the Employee ID to load their details for editing
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Main Content - Only show when not searching for employee */}
+      {!showSearchModal && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="container mx-auto py-2 px-6 md:px-4"
+          >
         <div className="flex justify-between items-center">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -315,7 +476,7 @@ const EmployeeEdit = () => {
               </motion.div>
               
               {/* Created/Updated Info */}
-              {data?.data?.createdAt && (
+              {data?.createdAt && (
                 <motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -324,12 +485,12 @@ const EmployeeEdit = () => {
                 >
                   <div>
                     <span>Created: </span>
-                    <span>{new Date(data.data.createdAt).toLocaleString()}</span>
+                    <span>{new Date(data.createdAt).toLocaleString()}</span>
                   </div>
-                  {data?.data?.updatedAt && (
+                  {data?.updatedAt && (
                     <div>
                       <span>Last Updated: </span>
-                      <span>{new Date(data.data.updatedAt).toLocaleString()}</span>
+                      <span>{new Date(data.updatedAt).toLocaleString()}</span>
                     </div>
                   )}
                 </motion.div>
@@ -337,21 +498,24 @@ const EmployeeEdit = () => {
             </form>
           )}
         </motion.div>
-      </motion.div>
-      
-      {/* Footer with animation */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.8 }}
-        className="mt-8 text-center text-[#ababab] text-sm py-4"
-      >
-        <motion.p
-          whileHover={{ color: "#f5f5f5" }}
-        >
-          Updated {new Date().toLocaleTimeString()}
-        </motion.p>
-      </motion.div>
+          </motion.div>
+          
+          {/* Footer with animation */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            className="mt-8 text-center text-[#ababab] text-sm py-4"
+          >
+            <motion.p
+              whileHover={{ color: "#f5f5f5" }}
+            >
+              Updated {new Date().toLocaleTimeString()}
+            </motion.p>
+          </motion.div>
+        </>
+      )}
+     <div className="pb-12 sm:pb-16 md:pb-20 lg:pb-24"></div>
     </div>
   );
 };

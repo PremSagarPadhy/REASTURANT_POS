@@ -83,6 +83,8 @@ app.use('/api/inventory', require('./routes/inventoryRoute'));
 app.use('/api/support', require('./routes/supportRoute'));
 const employeeRoutes = require('./routes/employeeRoutes');
 app.use('/api/employees', employeeRoutes);
+const attendanceRoutes = require('./routes/attendanceRoutes');
+app.use('/api/attendance', attendanceRoutes);
   
 // Global Error Handler
 app.use(globalErrorHandler);
