@@ -1,80 +1,25 @@
+const mongoose = require('mongoose');
 const Employee = require('../models/Employee');
 const Order = require('../models/orderModel');
+const config = require('../config/config');
 
-// Get all employees
-exports.getAllEmployees = async (req, res) => {
+// Connect to MongoDB
+const connectDB = async () => {
   try {
-    console.log('GET /api/employees - Fetching all employees');
-    const employees = await Employee.find();
-    console.log(`Found ${employees.length} employees:`, employees);
-    res.json({ success: true, data: employees });
-  } catch (err) {
-    console.error('Error fetching employees:', err);
-    res.status(500).json({ success: false, message: err.message });
+    await mongoose.connect(config.databaseURL);
+    console.log('✅ Connected to MongoDB');
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error);
+    process.exit(1);
   }
 };
 
-// Get single employee by ID
-exports.getEmployeeById = async (req, res) => {
+const seedData = async () => {
   try {
-    const employee = await Employee.findById(req.params.id);
-    if (!employee) return res.status(404).json({ success: false, message: "Employee not found" });
-    res.json({ success: true, data: employee });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-// Update employee
-exports.updateEmployee = async (req, res) => {
-  try {
-    const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!employee) return res.status(404).json({ success: false, message: "Employee not found" });
-    res.json({ success: true, data: employee });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-// Delete employee
-exports.deleteEmployee = async (req, res) => {
-  try {
-    const employee = await Employee.findByIdAndDelete(req.params.id);
-    if (!employee) return res.status(404).json({ success: false, message: "Employee not found" });
-    res.json({ success: true, message: "Employee deleted" });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-// Create a new employee
-exports.createEmployee = async (req, res) => {
-  try {
-    console.log('Received employee data:', req.body);
-    const newEmployee = new Employee(req.body);
-    await newEmployee.save();
-    res.status(201).json({ success: true, data: newEmployee });
-  } catch (err) {
-    console.error('Error creating employee:', err.message);
-    if (err.code === 11000) {
-      // Duplicate key error
-      const field = Object.keys(err.keyPattern)[0];
-      res.status(400).json({ success: false, message: `Employee with this ${field} already exists` });
-    } else {
-      res.status(400).json({ success: false, message: err.message });
-    }
-  }
-};
-
-// Seed test employees and orders
-exports.seedTestData = async (req, res) => {
-  try {
-    console.log('Seeding test employees and orders...');
-    
     // Clear existing data
     await Employee.deleteMany({});
     await Order.deleteMany({});
-    console.log('Cleared existing employees and orders');
+    console.log('🧹 Cleared existing employees and orders');
 
     // Create test employees
     const employees = [
@@ -116,7 +61,7 @@ exports.seedTestData = async (req, res) => {
     ];
 
     const createdEmployees = await Employee.insertMany(employees);
-    console.log('Created test employees:', createdEmployees.length);
+    console.log('👥 Created test employees:', createdEmployees.length);
 
     // Get waiter and cook IDs
     const waiter1 = createdEmployees.find(emp => emp.empid === 'W001');
@@ -211,24 +156,31 @@ exports.seedTestData = async (req, res) => {
           { name: 'Coffee', price: 3.99, quantity: 2 }
         ],
         paymentMethod: 'cash'
+        // No assigned employees - this will be unassigned
       }
     ];
 
     const createdOrders = await Order.insertMany(orders);
-    console.log('Created test orders:', createdOrders.length);
+    console.log('📋 Created test orders:', createdOrders.length);
 
-    res.json({ 
-      success: true, 
-      message: 'Test data seeded successfully!',
-      data: {
-        employees: createdEmployees.length,
-        orders: createdOrders.length,
-        assignedOrders: orders.filter(o => o.assignedWaiter || o.assignedCook).length,
-        unassignedOrders: orders.filter(o => !o.assignedWaiter && !o.assignedCook).length
-      }
-    });
-  } catch (err) {
-    console.error('Error seeding test data:', err);
-    res.status(500).json({ success: false, message: err.message });
+    console.log('\n✅ Seed data created successfully!');
+    console.log('👥 Employees:', employees.length);
+    console.log('📋 Orders:', orders.length);
+    console.log('   - Assigned orders:', orders.filter(o => o.assignedWaiter || o.assignedCook).length);
+    console.log('   - Unassigned orders:', orders.filter(o => !o.assignedWaiter && !o.assignedCook).length);
+    
+  } catch (error) {
+    console.error('❌ Error seeding data:', error);
+  } finally {
+    mongoose.connection.close();
+    console.log('🔌 Database connection closed');
   }
 };
+
+// Run the seed script
+const run = async () => {
+  await connectDB();
+  await seedData();
+};
+
+run();

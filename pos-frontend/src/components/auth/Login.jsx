@@ -28,9 +28,17 @@ const Login = () => {
       mutationFn: (reqData) => login(reqData),
       onSuccess: (res) => {
           const { data } = res;
-          console.log(data);
+          console.log('Full login response:', res);
+          console.log('Login data:', data);
+          
+          // Backend uses httpOnly cookies for authentication, not tokens in localStorage
+          // The accessToken cookie should be set automatically by the browser
+          console.log('Login successful - authentication handled via cookies');
+          
           const { _id, name, email, phone, role } = data.data;
           dispatch(setUser({ _id, name, email, phone, role }));
+          
+          enqueueSnackbar("Login successful!", { variant: "success" });
           navigate("/");
       },
       onError: (error) => {

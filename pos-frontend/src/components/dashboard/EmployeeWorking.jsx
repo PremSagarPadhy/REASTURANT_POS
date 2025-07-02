@@ -4,17 +4,16 @@ import { enqueueSnackbar } from "notistack";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FaUtensils, 
-  FaConcierge, 
+  FaConciergeBell, 
   FaClock, 
   FaUser,
   FaEdit,
-  FaAssign,
   FaUserPlus,
   FaChartLine,
   FaFilter,
   FaSearch
 } from "react-icons/fa";
-import { MdRestaurant, MdPendingActions, MdCheckCircle } from "react-icons/md";
+import { MdRestaurant, MdPendingActions, MdCheckCircle, MdAssignmentAdd} from "react-icons/md";
 import { 
   getWorkingOrders,
   getEmployeeWorkload,
@@ -41,6 +40,12 @@ const EmployeeWorking = () => {
       employeeType: employeeTypeFilter !== "all" ? employeeTypeFilter : undefined
     }),
     refetchInterval: 10000, // Refresh every 10 seconds
+    onSuccess: (data) => {
+      console.log('Working orders data received:', data);
+    },
+    onError: (error) => {
+      console.log('Working orders data error:', error);
+    }
   });
 
   // Fetch employee workload
@@ -48,12 +53,25 @@ const EmployeeWorking = () => {
     queryKey: ["employeeWorkload"],
     queryFn: getEmployeeWorkload,
     refetchInterval: 15000, // Refresh every 15 seconds
+    onSuccess: (data) => {
+      console.log('Workload data received:', data);
+    },
+    onError: (error) => {
+      console.log('Workload data error:', error);
+    }
   });
 
   // Fetch employees for assignment
   const { data: employeesData } = useQuery({
     queryKey: ["employees"],
     queryFn: getEmployees,
+    onSuccess: (data) => {
+      console.log('Employees data received:', data);
+      console.log('Employee positions:', data?.map(emp => emp.position));
+    },
+    onError: (error) => {
+      console.log('Employees data error:', error);
+    }
   });
 
   // Assignment mutations
@@ -85,10 +103,22 @@ const EmployeeWorking = () => {
 
   // Filter employees by position
   const getFilteredEmployees = (position) => {
-    return employeesData?.data?.filter(emp => 
-      emp.position.toLowerCase().includes(position.toLowerCase()) &&
-      emp.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    console.log('Filtering employees for position:', position);
+    console.log('Available employees:', employeesData);
+    
+    const filtered = employeesData?.filter(emp => {
+      const empPosition = emp.position?.toLowerCase() || '';
+      const searchPosition = position.toLowerCase();
+      const matchesPosition = empPosition.includes(searchPosition);
+      const matchesSearch = emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) || true;
+      
+      console.log(`Employee ${emp.name} - Position: ${empPosition}, Matches ${searchPosition}: ${matchesPosition}`);
+      
+      return matchesPosition && matchesSearch;
+    }) || [];
+    
+    console.log(`Filtered ${position}s:`, filtered);
+    return filtered;
   };
 
   const waiters = getFilteredEmployees("waiter");
@@ -160,7 +190,7 @@ const EmployeeWorking = () => {
         <div className="flex gap-1 mb-6 bg-[#262626] p-1 rounded-lg">
           {[
             { id: "overview", label: "Overview", icon: FaChartLine },
-            { id: "waiters", label: "Waiters", icon: FaConcierge },
+            { id: "waiters", label: "Waiters", icon: FaConciergeBell },
             { id: "cooks", label: "Cooks", icon: FaUtensils },
             { id: "unassigned", label: "Unassigned Orders", icon: MdPendingActions }
           ].map((tab) => (
@@ -241,11 +271,11 @@ const EmployeeWorking = () => {
                   {/* Waiters Summary */}
                   <div className="bg-[#262626] p-6 rounded-lg">
                     <h3 className="text-[#f5f5f5] text-lg font-semibold mb-4 flex items-center gap-2">
-                      <FaConcierge className="text-blue-400" />
+                      <FaConciergeBell className="text-blue-400" />
                       Active Waiters
                     </h3>
                     <div className="space-y-3">
-                      {Object.values(workloadData.data.waiters).map((waiter) => (
+                      {workloadData?.data?.waiters && Object.values(workloadData.data.waiters).map((waiter) => (
                         <div key={waiter.employee._id} className="flex justify-between items-center p-3 bg-[#1f1f1f] rounded-md">
                           <div>
                             <p className="text-[#f5f5f5] font-medium">{waiter.employee.name}</p>
@@ -257,7 +287,7 @@ const EmployeeWorking = () => {
                           </div>
                         </div>
                       ))}
-                      {Object.keys(workloadData.data.waiters).length === 0 && (
+                      {(!workloadData?.data?.waiters || Object.keys(workloadData.data.waiters).length === 0) && (
                         <p className="text-[#ababab] text-center py-4">No active waiters</p>
                       )}
                     </div>
@@ -270,7 +300,7 @@ const EmployeeWorking = () => {
                       Active Cooks
                     </h3>
                     <div className="space-y-3">
-                      {Object.values(workloadData.data.cooks).map((cook) => (
+                      {workloadData?.data?.cooks && Object.values(workloadData.data.cooks).map((cook) => (
                         <div key={cook.employee._id} className="flex justify-between items-center p-3 bg-[#1f1f1f] rounded-md">
                           <div>
                             <p className="text-[#f5f5f5] font-medium">{cook.employee.name}</p>
@@ -282,7 +312,7 @@ const EmployeeWorking = () => {
                           </div>
                         </div>
                       ))}
-                      {Object.keys(workloadData.data.cooks).length === 0 && (
+                      {(!workloadData?.data?.cooks || Object.keys(workloadData.data.cooks).length === 0) && (
                         <p className="text-[#ababab] text-center py-4">No active cooks</p>
                       )}
                     </div>
@@ -301,7 +331,7 @@ const EmployeeWorking = () => {
                     <div className="p-4 border-b border-[#333] flex justify-between items-center">
                       <div>
                         <h3 className="text-[#f5f5f5] text-lg font-semibold flex items-center gap-2">
-                          <FaConcierge className="text-blue-400" />
+                          <FaConciergeBell className="text-blue-400" />
                           {waiterData.employee.name}
                         </h3>
                         <p className="text-[#ababab] text-sm">ID: {waiterData.employee.empid} • {waiterData.orders.length} active orders</p>
@@ -364,7 +394,7 @@ const EmployeeWorking = () => {
                 ))
               ) : (
                 <div className="bg-[#262626] p-8 rounded-lg text-center">
-                  <FaConcierge className="text-4xl text-[#ababab] mx-auto mb-4" />
+                  <FaConciergeBell className="text-4xl text-[#ababab] mx-auto mb-4" />
                   <p className="text-[#ababab]">No waiters with assigned orders</p>
                 </div>
               )}
@@ -457,7 +487,7 @@ const EmployeeWorking = () => {
               <div className="bg-[#262626] rounded-lg overflow-hidden">
                 <div className="p-4 border-b border-[#333]">
                   <h3 className="text-[#f5f5f5] text-lg font-semibold flex items-center gap-2">
-                    <FaConcierge className="text-blue-400" />
+                    <FaConciergeBell className="text-blue-400" />
                     Orders Without Waiters
                   </h3>
                 </div>

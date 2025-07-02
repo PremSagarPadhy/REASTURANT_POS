@@ -8,7 +8,8 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  withCredentials: true // Enable cookies to be sent with requests
 });
 
 // Auth Endpoints
@@ -17,7 +18,7 @@ export const register = (data) => api.post("/user/register", data);
 export const getUserData = () => api.get("/user");
 export const logout = () => {
   localStorage.removeItem('token');
-  return api.post("/user/logout");
+  return Promise.resolve(); // Return a resolved promise since we're just clearing local storage
 };
 
 // Category API endpoints
@@ -130,13 +131,11 @@ export const sendAdminMessage = (messageData) => api.post('/support/messages', m
 export const markSupportMessagesAsRead = (customerId) => api.put(`/support/customers/${customerId}/read`);
 export const updateSupportStatus = (customerId, status) => api.put(`/support/customers/${customerId}/status`, { status });
 
-// Set up request interceptor for handling tokens if needed
+// Set up request interceptor - no need to add Authorization headers since backend uses cookies
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
+    // Cookies are sent automatically with withCredentials: true
+    console.log('Making request to:', config.url);
     return config;
   },
   (error) => Promise.reject(error)
@@ -148,9 +147,12 @@ api.interceptors.response.use(
   (error) => {
     // Handle common errors like authentication issues
     if (error.response && error.response.status === 401) {
-      // Handle unauthorized access - perhaps redirect to login
-      console.error('Authentication failed. Redirecting to login...');
-      // You could dispatch a logout action or redirect here
+      // Handle unauthorized access - backend manages cookies automatically
+      console.error('401 Authentication failed. Error details:', error.response);
+      console.error('Request URL:', error.config?.url);
+      
+      // Don't automatically redirect here - let the app handle it through useLoadData
+      // This prevents double redirects and allows for more controlled error handling
     }
     return Promise.reject(error);
   }

@@ -12,15 +12,25 @@ const useLoadData = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
+        // Backend uses httpOnly cookies for authentication
+        // Try to get user data - if successful, user is authenticated
         const { data } = await getUserData();
-        console.log(data);
+        console.log('User data fetched successfully:', data);
         const { _id, name, email, phone, role } = data.data;
         dispatch(setUser({ _id, name, email, phone, role }));
       } catch (error) {
-        dispatch(removeUser());
-        Navigate("/auth");
-        console.log(error);
-      }finally{
+        console.log('Error in useLoadData:', error);
+        
+        // Only logout if it's actually an authentication error
+        if (error.response && error.response.status === 401) {
+          console.log('401 error in useLoadData - user not authenticated');
+          dispatch(removeUser());
+          navigate("/auth");
+        } else {
+          // For other errors, just log them but don't logout
+          console.log('Non-auth error in useLoadData, not logging out');
+        }
+      } finally {
         setIsLoading(false);
       }
     };
