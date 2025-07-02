@@ -19,7 +19,8 @@ import {
   getEmployeeWorkload,
   assignWaiterToOrder,
   assignCookToOrder,
-  getEmployees
+  getEmployees,
+  getOrders
 } from '../../api/index.js';
 
 const EmployeeWorking = () => {
@@ -33,36 +34,80 @@ const EmployeeWorking = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalSearchTerm, setModalSearchTerm] = useState("");
 
-  // Fetch working orders
-  const { data: workingOrdersData, isLoading: ordersLoading } = useQuery({
-    queryKey: ["workingOrders", statusFilter, employeeTypeFilter],
-    queryFn: () => getWorkingOrders({
-      status: statusFilter !== "all" ? statusFilter : undefined,
-      employeeType: employeeTypeFilter !== "all" ? employeeTypeFilter : undefined
-    }),
+  // Fetch all orders
+  const { data: ordersData, isLoading: ordersLoading, error: ordersError } = useQuery({
+    queryKey: ["orders"],
+    queryFn: getOrders,
     refetchInterval: 10000, // Refresh every 10 seconds
     onSuccess: (data) => {
-      console.log('Working orders data received:', data);
-      console.log('All orders:', data?.data?.all);
-      console.log('Orders count:', data?.data?.all?.length);
+      console.log('Orders data received:', data);
+      console.log('All orders:', data?.data);
+      console.log('Orders count:', data?.data?.length);
+      console.log('Sample order:', data?.data?.[0]);
     },
     onError: (error) => {
-      console.log('Working orders data error:', error);
+      console.log('Orders data error:', error);
     }
   });
 
-  // Fetch employee workload
-  const { data: workloadData, isLoading: workloadLoading } = useQuery({
-    queryKey: ["employeeWorkload"],
-    queryFn: getEmployeeWorkload,
-    refetchInterval: 15000, // Refresh every 15 seconds
-    onSuccess: (data) => {
-      console.log('Workload data received:', data);
-    },
-    onError: (error) => {
-      console.log('Workload data error:', error);
-    }
-  });
+  // Process workload data from orders
+  const processWorkloadData = (orders) => {
+    if (!orders || !Array.isArray(orders)) return null;
+
+    const activeOrders = orders.filter(order => 
+      ['In Progress', 'Ready', 'pending', 'preparing', 'ready'].includes(order.orderStatus)
+    );
+
+    const workloadSummary = {
+      waiters: {},
+      cooks: {}
+    };
+
+    activeOrders.forEach(order => {
+      if (order.assignedWaiter) {
+        const waiterId = order.assignedWaiter._id || order.assignedWaiter;
+        if (!workloadSummary.waiters[waiterId]) {
+          workloadSummary.waiters[waiterId] = {
+            employee: order.assignedWaiter,
+            activeOrders: 0,
+            orders: []
+          };
+        }
+        workloadSummary.waiters[waiterId].activeOrders++;
+        workloadSummary.waiters[waiterId].orders.push({
+          orderId: order._id,
+          status: order.orderStatus,
+          table: order.table,
+          customerName: order.customerDetails.name
+        });
+      }
+
+      if (order.assignedCook) {
+        const cookId = order.assignedCook._id || order.assignedCook;
+        if (!workloadSummary.cooks[cookId]) {
+          workloadSummary.cooks[cookId] = {
+            employee: order.assignedCook,
+            activeOrders: 0,
+            orders: []
+          };
+        }
+        workloadSummary.cooks[cookId].activeOrders++;
+        workloadSummary.cooks[cookId].orders.push({
+          orderId: order._id,
+          status: order.orderStatus,
+          table: order.table,
+          customerName: order.customerDetails.name
+        });
+      }
+    });
+
+    return workloadSummary;
+  };
+
+  // Create workload data from orders
+  const workloadData = ordersData ? { 
+    data: processWorkloadData(ordersData.data) 
+  } : null;
 
   // Fetch employees for assignment
   const { data: employeesData } = useQuery({
@@ -81,8 +126,7 @@ const EmployeeWorking = () => {
   const assignWaiterMutation = useMutation({
     mutationFn: assignWaiterToOrder,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["workingOrders"] });
-      queryClient.invalidateQueries({ queryKey: ["employeeWorkload"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
       enqueueSnackbar("Waiter assigned successfully!", { variant: "success" });
       setShowAssignModal(false);
     },
@@ -94,8 +138,7 @@ const EmployeeWorking = () => {
   const assignCookMutation = useMutation({
     mutationFn: assignCookToOrder,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["workingOrders"] });
-      queryClient.invalidateQueries({ queryKey: ["employeeWorkload"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
       enqueueSnackbar("Cook assigned successfully!", { variant: "success" });
       setShowAssignModal(false);
     },
@@ -162,6 +205,99 @@ const EmployeeWorking = () => {
 
   // Check if any assignment is in progress
   const isAssigning = assignWaiterMutation.isPending || assignCookMutation.isPending;
+
+  // Process orders data to create working orders structure
+  const processOrdersData = (orders) => {
+    if (!orders || !Array.isArray(orders)) {
+      console.log('No orders data available');
+      return null;
+    }
+
+    console.log('Processing orders:', orders.length);
+
+    // Filter active orders - include all orders for now to debug
+    const activeOrders = orders.filter(order => {
+      const validStatuses = ['In Progress', 'Ready', 'Completed', 'pending', 'preparing', 'ready', 'served'];
+      const hasValidStatus = validStatuses.includes(order.orderStatus);
+      console.log(`Order ${order._id}: Status: ${order.orderStatus}, Valid: ${hasValidStatus}`);
+      return hasValidStatus;
+    });
+
+    console.log('Active orders after filtering:', activeOrders.length);
+
+    // Apply filters
+    let filteredOrders = activeOrders;
+
+    if (statusFilter && statusFilter !== 'all') {
+      filteredOrders = filteredOrders.filter(order => order.orderStatus === statusFilter);
+      console.log(`After status filter (${statusFilter}):`, filteredOrders.length);
+    }
+
+    if (employeeTypeFilter === 'waiter') {
+      filteredOrders = filteredOrders.filter(order => order.assignedWaiter);
+    } else if (employeeTypeFilter === 'cook') {
+      filteredOrders = filteredOrders.filter(order => order.assignedCook);
+    }
+
+    console.log('Final filtered orders:', filteredOrders.length);
+
+    // Group orders by employee
+    const groupedData = {
+      waiters: {},
+      cooks: {},
+      unassigned: {
+        waiter: [],
+        cook: []
+      }
+    };
+
+    filteredOrders.forEach(order => {
+      // Group by waiter
+      if (order.assignedWaiter) {
+        const waiterId = order.assignedWaiter._id || order.assignedWaiter;
+        if (!groupedData.waiters[waiterId]) {
+          groupedData.waiters[waiterId] = {
+            employee: order.assignedWaiter,
+            orders: []
+          };
+        }
+        groupedData.waiters[waiterId].orders.push(order);
+      } else {
+        groupedData.unassigned.waiter.push(order);
+      }
+
+      // Group by cook
+      if (order.assignedCook) {
+        const cookId = order.assignedCook._id || order.assignedCook;
+        if (!groupedData.cooks[cookId]) {
+          groupedData.cooks[cookId] = {
+            employee: order.assignedCook,
+            orders: []
+          };
+        }
+        groupedData.cooks[cookId].orders.push(order);
+      } else {
+        groupedData.unassigned.cook.push(order);
+      }
+    });
+
+    console.log('Grouped data:', {
+      waiters: Object.keys(groupedData.waiters).length,
+      cooks: Object.keys(groupedData.cooks).length,
+      unassignedWaiters: groupedData.unassigned.waiter.length,
+      unassignedCooks: groupedData.unassigned.cook.length
+    });
+
+    return {
+      all: filteredOrders,
+      grouped: groupedData
+    };
+  };
+
+  // Process the orders data
+  const workingOrdersData = ordersData ? { 
+    data: processOrdersData(ordersData.data) 
+  } : null;
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -282,9 +418,12 @@ const EmployeeWorking = () => {
               <div className="mt-4 p-3 bg-[#1f1f1f] rounded-md">
                 <p className="text-xs text-[#ababab]">
                   Debug: Loading: {ordersLoading ? 'Yes' : 'No'} | 
-                  Orders: {workingOrdersData?.data?.all?.length || 0} | 
+                  Total Orders: {ordersData?.data?.length || 0} | 
+                  Active Orders: {workingOrdersData?.data?.all?.length || 0} | 
                   Status Filter: {statusFilter} | 
-                  Employee Filter: {employeeTypeFilter}
+                  Employee Filter: {employeeTypeFilter} |
+                  Unassigned Waiters: {workingOrdersData?.data?.grouped?.unassigned?.waiter?.length || 0} |
+                  Unassigned Cooks: {workingOrdersData?.data?.grouped?.unassigned?.cook?.length || 0}
                 </p>
               </div>
             )}

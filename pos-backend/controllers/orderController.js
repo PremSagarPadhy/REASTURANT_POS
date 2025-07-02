@@ -101,7 +101,11 @@ const getOrderById = async (req, res, next) => {
 // Get all orders (Supports filtering by status & date)
 const getOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find().populate("table");
+    const orders = await Order.find()
+      .populate("table")
+      .populate('assignedWaiter', 'empid name position')
+      .populate('assignedCook', 'empid name position')
+      .sort({ createdAt: -1 });
     res.status(200).json({ data: orders });
   } catch (error) {
     next(error);
