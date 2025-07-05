@@ -5,156 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getCustomers, getCustomerStats, updateCustomerInfo } from "../../https/index";
 import { formatDateAndTime } from "../../utils";
 
-// Customer Stats Card Component
-const CustomerStatsCard = ({ customerStats }) => {
-  const [showDetails, setShowDetails] = useState(false);
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="w-full bg-[#262626] rounded-lg shadow-lg p-4 md:p-6"
-      whileHover={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)" }}
-    >
-      <motion.div 
-        initial={{ x: -10, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="flex justify-between mb-3"
-      >
-        <div className="flex items-center">
-          <div className="flex justify-center items-center">
-            <h5 className="text-xl font-bold leading-none text-[#f5f5f5] pe-1">Customer Overview</h5>
-            <motion.svg 
-              whileHover={{ scale: 1.2, rotate: 15 }}
-              transition={{ type: "spring", stiffness: 300 }}
-              className="w-3.5 h-3.5 text-[#ababab] hover:text-[#f5f5f5] cursor-pointer ms-1" 
-              aria-hidden="true" 
-              xmlns="http://www.w3.org/2000/svg" 
-              fill="currentColor" 
-              viewBox="0 0 20 20"
-            >
-              <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm0 16a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm1-5.034V12a1 1 0 0 1-2 0v-1.418a1 1 0 0 1 1.038-.999 1.436 1.436 0 0 0 1.488-1.441 1.501 1.501 0 1 0-3-.116.986.986 0 0 1-1.037.961 1 1 0 0 1-.96-1.037A3.5 3.5 0 1 1 11 11.466Z"/>
-            </motion.svg>
-          </div>
-        </div>
-      </motion.div>
-
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="bg-[#1f1f1f] p-3 rounded-lg"
-        whileHover={{ boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}
-      >
-        <div className="grid grid-cols-3 gap-3 mb-2">
-          <motion.dl 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[78px]"
-            whileHover={{ scale: 1.05, backgroundColor: "#3d3d3d" }}
-          >
-            <dt className="w-8 h-8 rounded-full bg-[#025cca] bg-opacity-20 text-[#025cca] text-sm font-medium flex items-center justify-center mb-1">
-              {customerStats.total}
-            </dt>
-            <dd className="text-[#025cca] text-sm font-medium">Total Customers</dd>
-          </motion.dl>
-          
-          <motion.dl 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[78px]"
-            whileHover={{ scale: 1.05, backgroundColor: "#3d3d3d" }}
-          >
-            <dt className="w-8 h-8 rounded-full bg-[#02ca3a] bg-opacity-20 text-[#02ca3a] text-sm font-medium flex items-center justify-center mb-1">
-              {customerStats.active}
-            </dt>
-            <dd className="text-[#02ca3a] text-sm font-medium">Active</dd>
-          </motion.dl>
-          
-          <motion.dl 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="bg-[#333] rounded-lg flex flex-col items-center justify-center h-[78px]"
-            whileHover={{ scale: 1.05, backgroundColor: "#3d3d3d" }}
-          >
-            <dt className="w-8 h-8 rounded-full bg-[#f6b100] bg-opacity-20 text-[#f6b100] text-sm font-medium flex items-center justify-center mb-1">
-              {customerStats.recurring}
-            </dt>
-            <dd className="text-[#f6b100] text-sm font-medium">Recurring</dd>
-          </motion.dl>
-        </div>
-        
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setShowDetails(!showDetails)}
-          type="button" 
-          className="hover:underline text-xs text-[#ababab] font-medium inline-flex items-center"
-        >
-          {showDetails ? "Hide details" : "Show more details"}
-          <svg className={`w-2 h-2 ms-1 transition-transform duration-300 ${showDetails ? "rotate-180" : ""}`} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4"/>
-          </svg>
-        </motion.button>
-        
-        <AnimatePresence>
-          {showDetails && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="border-[#4a4a4a] border-t pt-3 mt-3 space-y-2 overflow-hidden"
-            >
-              <motion.dl 
-                initial={{ x: -10, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-                className="flex items-center justify-between"
-              >
-                <dt className="text-[#ababab] text-sm font-normal">Average orders per customer:</dt>
-                <dd className="bg-[#025cca] bg-opacity-20 text-[#025cca] text-xs font-medium inline-flex items-center px-2.5 py-1 rounded-md">
-                  <svg className="w-2.5 h-2.5 me-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 14">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13V1m0 0L1 5m4-4 4 4"/>
-                  </svg> 
-                  {customerStats.avgOrders}
-                </dd>
-              </motion.dl>
-              <motion.dl 
-                initial={{ x: -10, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-                className="flex items-center justify-between"
-              >
-                <dt className="text-[#ababab] text-sm font-normal">Average spend per customer:</dt>
-                <dd className="bg-[#333] text-[#f5f5f5] text-xs font-medium inline-flex items-center px-2.5 py-1 rounded-md">
-                  ₹{customerStats.avgSpend}
-                </dd>
-              </motion.dl>
-              <motion.dl 
-                initial={{ x: -10, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.3 }}
-                className="flex items-center justify-between"
-              >
-                <dt className="text-[#ababab] text-sm font-normal">Most active time:</dt>
-                <dd className="bg-[#333] text-[#f5f5f5] text-xs font-medium inline-flex items-center px-2.5 py-1 rounded-md">
-                  19:00 - 21:00
-                </dd>
-              </motion.dl>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </motion.div>
-  );
-};
-
 // Edit Customer Modal Component
 const EditCustomerModal = ({ customer, isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -731,17 +581,13 @@ const CustomerDetails = () => {
         ))}
       </div>
 
-      {/* Customer Stats Card and Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-6 md:mt-8 px-2 md:px-4">
-        <div className="lg:col-span-1">
-          <CustomerStatsCard customerStats={customerStats} />
-        </div>
-        
+      {/* Customer Table */}
+      <div className="mt-6 md:mt-8 px-2 md:px-4">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="lg:col-span-2 bg-[#262626] rounded-lg shadow-lg p-4 md:p-6"
+          className="bg-[#262626] rounded-lg shadow-lg p-4 md:p-6"
         >
           {/* Search and Filter Controls */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
