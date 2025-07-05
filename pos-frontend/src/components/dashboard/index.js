@@ -16,3 +16,4 @@ export { default as OrderList } from './OrderList';
 export { default as Metrics } from './Metrics';
 export { default as RecentOrders } from './RecentOrders';
 export { default as RadialChart } from './RadialChart';
+export { default as CustomerDetails } from './CustomerDetails';

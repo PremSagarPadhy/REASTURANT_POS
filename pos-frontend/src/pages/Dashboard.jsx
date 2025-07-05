@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {Analytics, RecentOrders, Payments, OrderList, ViewTable, AddCategory, Inventory, ManageItems, Invoices, AdminSupport, EmployeeDetails, EmployeeEdit, EmployeeAttendance, EmployeeWorking
+import {Analytics, RecentOrders, Payments, OrderList, ViewTable, AddCategory, Inventory, ManageItems, Invoices, AdminSupport, EmployeeDetails, EmployeeEdit, EmployeeAttendance, EmployeeWorking, CustomerDetails
 } from "../components/dashboard";
 
 import { useSidebar } from "../context/SidebarContext";
@@ -52,6 +52,8 @@ const Dashboard = () => {
         return <EmployeeAttendance />;
       case "Employee Working":
         return <EmployeeWorking />;
+      case "Customer":
+        return <CustomerDetails />;
       default:
         return <Analytics />;
     }

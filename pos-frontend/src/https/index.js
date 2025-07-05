@@ -112,3 +112,10 @@ export const updateInventoryItem = (itemId, itemData) => axiosWrapper.put(`/api/
 export const deleteInventoryItem = (itemId) => axiosWrapper.delete(`/api/inventory/${itemId}`);
 export const restockItem = (itemId, data) => axiosWrapper.post(`/api/inventory/${itemId}/restock`, data);
 export const useItem = (itemId, data) => axiosWrapper.post(`/api/inventory/${itemId}/use`, data);
+
+// Customer endpoints
+export const getCustomers = (timePeriod) => axiosWrapper.get(`/api/customers?timePeriod=${timePeriod}`);
+export const getCustomerByPhone = (phone) => axiosWrapper.get(`/api/customers/${phone}`);
+export const getCustomerStats = (timePeriod) => axiosWrapper.get(`/api/customers/stats?timePeriod=${timePeriod}`);
+export const getTopCustomers = (limit = 10, timePeriod) => axiosWrapper.get(`/api/customers/top?limit=${limit}&timePeriod=${timePeriod}`);
+export const updateCustomerInfo = (phone, customerData) => axiosWrapper.put(`/api/customers/${phone}`, customerData);

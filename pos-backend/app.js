@@ -81,6 +81,7 @@ app.use("/api/payment", require("./routes/paymentRoute"));
 app.use('/api/category', require('./routes/categoryRoute'));
 app.use('/api/inventory', require('./routes/inventoryRoute'));
 app.use('/api/support', require('./routes/supportRoute'));
+app.use('/api/customers', require('./routes/customerRoutes'));
 const employeeRoutes = require('./routes/employeeRoutes');
 app.use('/api/employees', employeeRoutes);
 const attendanceRoutes = require('./routes/attendanceRoutes');

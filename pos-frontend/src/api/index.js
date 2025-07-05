@@ -131,6 +131,13 @@ export const sendAdminMessage = (messageData) => api.post('/support/messages', m
 export const markSupportMessagesAsRead = (customerId) => api.put(`/support/customers/${customerId}/read`);
 export const updateSupportStatus = (customerId, status) => api.put(`/support/customers/${customerId}/status`, { status });
 
+// Customer endpoints
+export const getCustomers = (timePeriod) => axiosWrapper.get(`/api/customers?timePeriod=${timePeriod}`);
+export const getCustomerByPhone = (phone) => axiosWrapper.get(`/api/customers/${phone}`);
+export const getCustomerStats = (timePeriod) => axiosWrapper.get(`/api/customers/stats?timePeriod=${timePeriod}`);
+export const getTopCustomers = (limit = 10, timePeriod) => axiosWrapper.get(`/api/customers/top?limit=${limit}&timePeriod=${timePeriod}`);
+export const updateCustomerInfo = (phone, customerData) => axiosWrapper.put(`/api/customers/${phone}`, customerData);
+
 // Set up request interceptor - no need to add Authorization headers since backend uses cookies
 api.interceptors.request.use(
   (config) => {
@@ -150,9 +157,6 @@ api.interceptors.response.use(
       // Handle unauthorized access - backend manages cookies automatically
       console.error('401 Authentication failed. Error details:', error.response);
       console.error('Request URL:', error.config?.url);
-      
-      // Don't automatically redirect here - let the app handle it through useLoadData
-      // This prevents double redirects and allows for more controlled error handling
     }
     return Promise.reject(error);
   }
