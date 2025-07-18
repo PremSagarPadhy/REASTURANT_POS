@@ -5,6 +5,180 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getCustomers, getCustomerStats, updateCustomerInfo } from "../../https/index";
 import { formatDateAndTime } from "../../utils";
 
+// View Customer Modal Component
+const ViewCustomerModal = ({ customer, isOpen, onClose }) => {
+  if (!isOpen || !customer) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      >
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-[#262626] rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        >
+          {/* Header */}
+          <div className="p-6 border-b border-[#4a4a4a]">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-[#f5f5f5]">Customer Details</h2>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={onClose}
+                className="text-[#ababab] hover:text-[#f5f5f5] transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </motion.button>
+            </div>
+          </div>
+
+          {/* Customer Info */}
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div>
+                <h3 className="text-lg font-semibold text-[#f5f5f5] mb-4">Personal Information</h3>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-[#ababab] text-sm">Name:</span>
+                    <p className="text-[#f5f5f5] font-medium">{customer.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#ababab] text-sm">Phone:</span>
+                    <p className="text-[#f5f5f5] font-medium">{customer.phone}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#ababab] text-sm">Email:</span>
+                    <p className="text-[#f5f5f5] font-medium">{customer.email || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#ababab] text-sm">Customer Type:</span>
+                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ml-2 ${
+                      customer.customerType === "VIP" 
+                        ? "bg-[#f6b100] bg-opacity-20 text-[#f6b100]"
+                        : customer.customerType === "Regular"
+                        ? "bg-[#02ca3a] bg-opacity-20 text-[#02ca3a]"
+                        : "bg-[#025cca] bg-opacity-20 text-[#025cca]"
+                    }`}>
+                      {customer.customerType}
+                    </span>
+                  </div>
+                  {customer.notes && (
+                    <div>
+                      <span className="text-[#ababab] text-sm">Notes:</span>
+                      <p className="text-[#f5f5f5] font-medium">{customer.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-[#f5f5f5] mb-4">Order Statistics</h3>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-[#ababab] text-sm">Total Orders:</span>
+                    <p className="text-[#f5f5f5] font-medium">{customer.totalOrders}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#ababab] text-sm">Total Spent:</span>
+                    <p className="text-[#f5f5f5] font-medium">₹{(customer.totalSpent || 0).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#ababab] text-sm">Average Order Value:</span>
+                    <p className="text-[#f5f5f5] font-medium">
+                      ₹{customer.totalOrders > 0 ? Math.round((customer.totalSpent || 0) / customer.totalOrders).toLocaleString() : 0}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[#ababab] text-sm">Last Visit:</span>
+                    <p className="text-[#f5f5f5] font-medium">{formatDateAndTime(customer.lastVisit)}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#ababab] text-sm">First Visit:</span>
+                    <p className="text-[#f5f5f5] font-medium">{formatDateAndTime(customer.firstVisit)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Order History */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-[#f5f5f5] mb-4">Order History</h3>
+              {customer.orders && customer.orders.length > 0 ? (
+                <div className="space-y-3">
+                  {customer.orders.slice(0, 10).map((order, index) => (
+                    <div key={order._id} className="bg-[#333] rounded-lg p-4 border border-[#4a4a4a]">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="text-[#f5f5f5] font-medium">Order #{order._id?.slice(-8)}</p>
+                          <p className="text-[#ababab] text-sm">{formatDateAndTime(order.createdAt)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[#f5f5f5] font-semibold">
+                            ₹{((order.totalAmount || order.totalWithTax || order.bills || 0) || 0).toLocaleString()}
+                          </p>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            order.status === "Completed" 
+                              ? "bg-[#02ca3a] bg-opacity-20 text-[#02ca3a]"
+                              : order.status === "Pending"
+                              ? "bg-[#f6b100] bg-opacity-20 text-[#f6b100]"
+                              : "bg-[#dc2626] bg-opacity-20 text-[#dc2626]"
+                          }`}>
+                            {order.status || "Unknown"}
+                          </span>
+                        </div>
+                      </div>
+                      {order.items && order.items.length > 0 && (
+                        <div className="text-sm text-[#ababab]">
+                          Items: {order.items.map(item => `${item.name} (${item.quantity})`).join(", ")}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {customer.orders.length > 10 && (
+                    <p className="text-[#ababab] text-sm text-center">
+                      Showing 10 of {customer.orders.length} orders
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[#ababab] text-center py-8">No order history available</p>
+              )}
+            </div>
+
+            {/* Favorite Items */}
+            {customer.favoriteItems && customer.favoriteItems.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold text-[#f5f5f5] mb-4">Favorite Items</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {customer.favoriteItems.slice(0, 6).map((item, index) => (
+                    <div key={index} className="bg-[#333] rounded-lg p-3 border border-[#4a4a4a]">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-[#f5f5f5] font-medium">{item.name}</p>
+                          <p className="text-[#ababab] text-sm">Ordered {item.count} times</p>
+                        </div>
+                        <p className="text-[#f5f5f5] font-semibold">₹{item.price}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 // Edit Customer Modal Component
 const EditCustomerModal = ({ customer, isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -288,6 +462,7 @@ const CustomerDetails = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [customersPerPage] = useState(5);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerStats, setCustomerStats] = useState({
     total: 0,
@@ -363,6 +538,12 @@ const CustomerDetails = () => {
   const handleEditCustomer = (customer) => {
     setSelectedCustomer(customer);
     setIsEditModalOpen(true);
+  };
+
+  // Handle view customer
+  const handleViewCustomer = (customer) => {
+    setSelectedCustomer(customer);
+    setIsViewModalOpen(true);
   };
 
   // Handle save customer
@@ -701,22 +882,37 @@ const CustomerDetails = () => {
                         {customer.totalOrders}
                       </td>
                       <td className="px-6 py-4">
-                        ₹{customer.totalSpent.toLocaleString()}
+                        ₹{(customer.totalSpent || 0).toLocaleString()}
                       </td>
                       <td className="px-6 py-4">
                         {new Date(customer.lastVisit).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleEditCustomer(customer)}
-                          className="text-[#025cca] hover:text-[#0273fa] transition-colors"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                          </svg>
-                        </motion.button>
+                        <div className="flex items-center gap-2">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleViewCustomer(customer)}
+                            className="text-[#02ca3a] hover:text-[#4ade80] transition-colors"
+                            title="View Details"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleEditCustomer(customer)}
+                            className="text-[#025cca] hover:text-[#0273fa] transition-colors"
+                            title="Edit Customer"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                          </motion.button>
+                        </div>
                       </td>
                     </motion.tr>
                   ))}
@@ -801,6 +997,7 @@ const CustomerDetails = () => {
             </motion.div>
           )}
         </motion.div>
+        <div className="pb-16"></div>
       </div>
 
       {/* Edit Customer Modal */}
@@ -809,6 +1006,13 @@ const CustomerDetails = () => {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSaveCustomer}
+      />
+
+      {/* View Customer Modal */}
+      <ViewCustomerModal
+        customer={selectedCustomer}
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
       />
     </div>
   );

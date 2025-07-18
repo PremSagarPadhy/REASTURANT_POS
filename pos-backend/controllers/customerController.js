@@ -41,10 +41,19 @@ const getCustomers = async (req, res, next) => {
           name: { $first: "$customerDetails.name" },
           phone: { $first: "$customerDetails.phone" },
           totalOrders: { $sum: 1 },
-          totalSpent: { $sum: "$bills.totalWithTax" },
+          totalSpent: { 
+            $sum: { 
+              $ifNull: [
+                "$bills.totalWithTax", 
+                { $ifNull: ["$totalAmount", { $ifNull: ["$bills.total", 0] }] }
+              ] 
+            } 
+          },
           lastVisit: { $max: "$orderDate" },
+          firstVisit: { $min: "$orderDate" },
           orders: { $push: "$$ROOT" },
-          avgGuests: { $avg: "$customerDetails.guests" }
+          avgGuests: { $avg: "$customerDetails.guests" },
+          allItems: { $push: "$items" }
         }
       },
       {
@@ -58,6 +67,7 @@ const getCustomers = async (req, res, next) => {
           totalSpent: 1,
           avgOrderValue: { $divide: ["$totalSpent", "$totalOrders"] },
           lastVisit: 1,
+          firstVisit: 1,
           avgGuests: { $round: ["$avgGuests", 0] },
           customerType: {
             $switch: {
@@ -68,7 +78,100 @@ const getCustomers = async (req, res, next) => {
               default: "New"
             }
           },
-          orders: 1
+          orders: {
+            $map: {
+              input: "$orders",
+              as: "order",
+              in: {
+                _id: "$$order._id",
+                orderDate: "$$order.orderDate",
+                createdAt: "$$order.createdAt",
+                totalAmount: "$$order.bills.totalWithTax",
+                status: "$$order.status",
+                items: "$$order.items",
+                tableId: "$$order.tableId"
+              }
+            }
+          },
+          allItems: {
+            $reduce: {
+              input: "$allItems",
+              initialValue: [],
+              in: { $concatArrays: ["$$value", "$$this"] }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          favoriteItems: {
+            $slice: [
+              {
+                $map: {
+                  input: {
+                    $sortArray: {
+                      input: {
+                        $reduce: {
+                          input: {
+                            $setUnion: [
+                              {
+                                $map: {
+                                  input: "$allItems",
+                                  as: "item",
+                                  in: "$$item.name"
+                                }
+                              }
+                            ]
+                          },
+                          initialValue: [],
+                          in: {
+                            $concatArrays: [
+                              "$$value",
+                              [
+                                {
+                                  name: "$$this",
+                                  count: {
+                                    $size: {
+                                      $filter: {
+                                        input: "$allItems",
+                                        cond: { $eq: ["$$this.name", "$$this"] }
+                                      }
+                                    }
+                                  },
+                                  price: {
+                                    $first: {
+                                      $map: {
+                                        input: {
+                                          $filter: {
+                                            input: "$allItems",
+                                            cond: { $eq: ["$$this.name", "$$this"] }
+                                          }
+                                        },
+                                        as: "item",
+                                        in: "$$item.price"
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      },
+                      sortBy: { count: -1 }
+                    }
+                  },
+                  as: "item",
+                  in: {
+                    name: "$$item.name",
+                    count: "$$item.count",
+                    price: "$$item.price"
+                  }
+                }
+              },
+              5
+            ]
+          }
         }
       },
       { $sort: { totalSpent: -1 } }
@@ -124,11 +227,19 @@ const getCustomerByPhone = async (req, res, next) => {
           name: { $first: "$customerDetails.name" },
           phone: { $first: "$customerDetails.phone" },
           totalOrders: { $sum: 1 },
-          totalSpent: { $sum: "$bills.totalWithTax" },
+          totalSpent: { 
+            $sum: { 
+              $ifNull: [
+                "$bills.totalWithTax", 
+                { $ifNull: ["$totalAmount", { $ifNull: ["$bills.total", 0] }] }
+              ] 
+            } 
+          },
           lastVisit: { $max: "$orderDate" },
           firstVisit: { $min: "$orderDate" },
           orders: { $push: "$$ROOT" },
-          avgGuests: { $avg: "$customerDetails.guests" }
+          avgGuests: { $avg: "$customerDetails.guests" },
+          allItems: { $push: "$items" }
         }
       },
       {
@@ -153,7 +264,100 @@ const getCustomerByPhone = async (req, res, next) => {
               default: "New"
             }
           },
-          orders: 1
+          orders: {
+            $map: {
+              input: "$orders",
+              as: "order",
+              in: {
+                _id: "$$order._id",
+                orderDate: "$$order.orderDate",
+                createdAt: "$$order.createdAt",
+                totalAmount: "$$order.bills.totalWithTax",
+                status: "$$order.status",
+                items: "$$order.items",
+                tableId: "$$order.tableId"
+              }
+            }
+          },
+          allItems: {
+            $reduce: {
+              input: "$allItems",
+              initialValue: [],
+              in: { $concatArrays: ["$$value", "$$this"] }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          favoriteItems: {
+            $slice: [
+              {
+                $map: {
+                  input: {
+                    $sortArray: {
+                      input: {
+                        $reduce: {
+                          input: {
+                            $setUnion: [
+                              {
+                                $map: {
+                                  input: "$allItems",
+                                  as: "item",
+                                  in: "$$item.name"
+                                }
+                              }
+                            ]
+                          },
+                          initialValue: [],
+                          in: {
+                            $concatArrays: [
+                              "$$value",
+                              [
+                                {
+                                  name: "$$this",
+                                  count: {
+                                    $size: {
+                                      $filter: {
+                                        input: "$allItems",
+                                        cond: { $eq: ["$$this.name", "$$this"] }
+                                      }
+                                    }
+                                  },
+                                  price: {
+                                    $first: {
+                                      $map: {
+                                        input: {
+                                          $filter: {
+                                            input: "$allItems",
+                                            cond: { $eq: ["$$this.name", "$$this"] }
+                                          }
+                                        },
+                                        as: "item",
+                                        in: "$$item.price"
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            ]
+                          }
+                        }
+                      },
+                      sortBy: { count: -1 }
+                    }
+                  },
+                  as: "item",
+                  in: {
+                    name: "$$item.name",
+                    count: "$$item.count",
+                    price: "$$item.price"
+                  }
+                }
+              },
+              5
+            ]
+          }
         }
       }
     ]);
