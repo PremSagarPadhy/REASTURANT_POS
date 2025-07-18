@@ -31,6 +31,15 @@ const Header = () => {
   
   const notificationRef = useRef(null);
   const socketRef = useRef(null);
+  const [gradientOffset, setGradientOffset] = useState(0);
+  
+  // Add animation gradient offset effect for text
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGradientOffset((prev) => (prev + 1) % 100);
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
 
   // Initialize socket connection
   useEffect(() => {
@@ -186,12 +195,81 @@ const Header = () => {
   return (
     <>
       <header className="flex justify-between items-center py-4 px-8 bg-[#1a1a1a] relative">
+        <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateX(-10px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes textGlow {
+          0% { text-shadow: 0 0 5px rgba(255, 255, 255, 0.2); opacity: 0; transform: translateX(-10px); }
+          50% { text-shadow: 0 0 15px rgba(255, 255, 255, 0.6); opacity: 0.7; transform: translateX(0); }
+          100% { text-shadow: 0 0 5px rgba(255, 255, 255, 0.2); opacity: 1; }
+        }
+
+        @keyframes logoSpin {
+          0% { transform: rotate(0deg); filter: hue-rotate(0deg); }
+          100% { transform: rotate(360deg); filter: hue-rotate(360deg); }
+        }
+
+        @keyframes logoPulse {
+          0% { transform: scale(1); filter: hue-rotate(0deg); }
+          50% { transform: scale(1.1); filter: hue-rotate(180deg); }
+          100% { transform: scale(1); filter: hue-rotate(360deg); }
+        }
+
+        .logo-spin:hover {
+          animation: logoSpin 3s linear infinite;
+        }
+
+        .logo-pulse {
+          animation: logoPulse 2s ease-in-out infinite;
+        }
+        
+        .gradient-text {
+          background-image: linear-gradient(
+            90deg, 
+            rgb(252, 252, 252) ${gradientOffset}%, 
+            rgb(245, 219, 211) ${gradientOffset + 20}%, 
+            rgb(245, 238, 236) ${gradientOffset + 40}%, 
+            rgb(255, 255, 255) ${gradientOffset + 60}%
+          );
+          background-size: 300% 100%;
+          background-clip: text;
+          -webkit-background-clip: text;
+          color: transparent;
+          display: inline-block;
+        }    
+        
+        @keyframes rotateOnce {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        .rotate-once {
+          animation: rotateOnce 5s ease-in-out forwards;
+        }
+        
+        .animated-restro {
+          display: inline-block;
+          animation: textGlow 1.5s ease-in-out forwards;
+        }
+        `}</style>
         {/* LOGO - Hidden on Dashboard */}
         {location.pathname !== "/dashboard" ? (
           <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer">
-            <img src={logo} className="h-8 w-8" alt="restro logo" />
-            <h1 className="text-lg font-semibold text-[#f5f5f5] tracking-wide">
-              Restro-Maniac
+            <img 
+              src={logo} 
+              className={`h-8 w-8 transition-all duration-500 logo-pulse`} 
+              alt="restro logo" 
+            />
+            <h1 className="text-lg font-semibold tracking-wide animated-restro">
+              <span className="gradient-text">Restro-Bill</span>
             </h1>
           </div>
         ) : (
