@@ -17,7 +17,10 @@ import { SidebarProvider } from "./context/SidebarContext";
 function Layout() {
   const location = useLocation();
   const isAuthPage = location.pathname === "/auth";
-  const isLoading = useLoadData(isAuthPage); // Pass isAuthPage to conditionally run the hook
+  
+  // Only call useLoadData when NOT on auth page
+  const isLoading = isAuthPage ? false : useLoadData();
+  
   const showSidebar = location.pathname.includes("/dashboard") || 
                       location.pathname.includes("/inventory") || 
                       location.pathname.includes("/admin-support") ||
