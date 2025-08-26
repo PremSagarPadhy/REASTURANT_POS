@@ -4,12 +4,18 @@ import { useEffect, useState } from "react";
 import { removeUser, setUser } from "../redux/slices/userSlice";
 import { useNavigate } from "react-router-dom";
 
-const useLoadData = () => {
+const useLoadData = (skipAuth = false) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Skip authentication check if we're on auth page
+    if (skipAuth) {
+      setIsLoading(false);
+      return;
+    }
+
     const fetchUser = async () => {
       try {
         // Backend uses httpOnly cookies for authentication
@@ -36,7 +42,7 @@ const useLoadData = () => {
     };
 
     fetchUser();
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate, skipAuth]);
 
   return isLoading;
 };
